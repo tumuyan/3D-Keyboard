@@ -82,7 +82,7 @@ function Keycap({
   keyData, keyboardWidth, keyboardHeight, texture, profile, 
   showLabels, labelPosition, textureOpacity,
   labelColor, labelOutlineColor, labelOutlineWidth, fontUrl, keycapColor, keyGapX, keyGapY,
-  outOfBoundsMode
+  outOfBoundsMode, textureMapping
 }: any) {
   const geometry = useMemo(() => {
     const { w, h, rowIndex } = keyData;
@@ -183,13 +183,48 @@ function Keycap({
       let uWorld = physicalX + physicalW / 2 + vx;
       let vWorld = physicalY + physicalH / 2 + vz;
       
-      // Unfold sides
-      const drop = height - vy;
-      uWorld += nx * drop * 0.6;
-      vWorld += nz * drop * 0.6;
+      let u = 0;
+      let v = 0;
       
-      const u = uWorld / keyboardWidth;
-      const v = 1.0 - (vWorld / keyboardHeight);
+      if (textureMapping === 'projected') {
+        u = uWorld / keyboardWidth;
+        v = 1.0 - (vWorld / keyboardHeight);
+      } else if (textureMapping === 'per-key') {
+        const drop = height - vy;
+        let localU = vx + nx * drop * 0.6;
+        let localV = vz + nz * drop * 0.6;
+        const maxU = physicalW / 2 + height * 0.6;
+        const maxV = physicalH / 2 + height * 0.6;
+        u = (localU + maxU) / (2 * maxU);
+        v = 1.0 - ((localV + maxV) / (2 * maxV));
+      } else if (textureMapping === 'fitted') {
+        const drop = height - vy;
+        let localU = vx + nx * drop * 0.6;
+        let localV = vz + nz * drop * 0.6;
+        
+        const maxLocalU = physicalW / 2 + height * 0.6;
+        const maxLocalV = physicalH / 2 + height * 0.6;
+        
+        const targetMaxU = (physicalW + keyGapX) / 2;
+        const targetMaxV = (physicalH + keyGapY) / 2;
+        
+        localU = localU * (targetMaxU / maxLocalU);
+        localV = localV * (targetMaxV / maxLocalV);
+        
+        uWorld = physicalX + physicalW / 2 + localU;
+        vWorld = physicalY + physicalH / 2 + localV;
+        
+        u = uWorld / keyboardWidth;
+        v = 1.0 - (vWorld / keyboardHeight);
+      } else {
+        // unfolded (default)
+        const drop = height - vy;
+        uWorld += nx * drop * 0.6;
+        vWorld += nz * drop * 0.6;
+        
+        u = uWorld / keyboardWidth;
+        v = 1.0 - (vWorld / keyboardHeight);
+      }
       
       uv.setXY(i, u, v);
     }
@@ -197,7 +232,7 @@ function Keycap({
     uv.needsUpdate = true;
     geom.computeVertexNormals();
     return geom;
-  }, [keyData, keyboardWidth, keyboardHeight, profile, keyGapX, keyGapY]);
+  }, [keyData, keyboardWidth, keyboardHeight, profile, keyGapX, keyGapY, textureMapping]);
 
   const physicalX = keyData.x * (1 + keyGapX);
   const physicalY = keyData.y * (1 + keyGapY);
@@ -356,7 +391,7 @@ function Keycap({
   );
 }
 
-function BasePlate({ width, height, texture, baseOpacity, baseColor, keyGapX, keyGapY, topBevel, bottomBevel, sideBevel, topRadius, bottomRadius, outOfBoundsMode }: any) {
+function BasePlate({ width, height, texture, baseOpacity, baseColor, keyGapX, keyGapY, topBevel, bottomBevel, sideBevel, topRadius, bottomRadius, outOfBoundsMode, textureMapping }: any) {
   const geometry = useMemo(() => {
     const W = width + 0.5;
     const H = height + 0.5;
@@ -446,13 +481,15 @@ function BasePlate({ width, height, texture, baseOpacity, baseColor, keyGapX, ke
         let uWorld = vx + width / 2;
         let vWorld = vz + height / 2;
         
-        const drop = T/2 - y;
-        const len = Math.sqrt(vx*vx + vz*vz);
-        const nx = len > 0 ? vx / len : 0;
-        const nz = len > 0 ? vz / len : 0;
-        
-        uWorld += nx * drop * 0.6;
-        vWorld += nz * drop * 0.6;
+        if (textureMapping !== 'projected') {
+          const drop = T/2 - y;
+          const len = Math.sqrt(vx*vx + vz*vz);
+          const nx = len > 0 ? vx / len : 0;
+          const nz = len > 0 ? vz / len : 0;
+          
+          uWorld += nx * drop * 0.6;
+          vWorld += nz * drop * 0.6;
+        }
         
         uvs.push(uWorld / width, 1.0 - (vWorld / height));
       }
@@ -463,12 +500,15 @@ function BasePlate({ width, height, texture, baseOpacity, baseColor, keyGapX, ke
       
       let uWorld = vx + width / 2;
       let vWorld = vz + height / 2;
-      const drop = T/2 - y;
-      const len = Math.sqrt(vx*vx + vz*vz);
-      const nx = len > 0 ? vx / len : 0;
-      const nz = len > 0 ? vz / len : 0;
-      uWorld += nx * drop * 0.6;
-      vWorld += nz * drop * 0.6;
+      
+      if (textureMapping !== 'projected') {
+        const drop = T/2 - y;
+        const len = Math.sqrt(vx*vx + vz*vz);
+        const nx = len > 0 ? vx / len : 0;
+        const nz = len > 0 ? vz / len : 0;
+        uWorld += nx * drop * 0.6;
+        vWorld += nz * drop * 0.6;
+      }
       
       uvs.push(uWorld / width, 1.0 - (vWorld / height));
     }
@@ -526,12 +566,15 @@ function BasePlate({ width, height, texture, baseOpacity, baseColor, keyGapX, ke
       
       let uWorld = vx + width / 2;
       let vWorld = vz + height / 2;
-      const drop = T;
-      const len = Math.sqrt(vx*vx + vz*vz);
-      const nx = len > 0 ? vx / len : 0;
-      const nz = len > 0 ? vz / len : 0;
-      uWorld += nx * drop * 0.6;
-      vWorld += nz * drop * 0.6;
+      
+      if (textureMapping !== 'projected') {
+        const drop = T;
+        const len = Math.sqrt(vx*vx + vz*vz);
+        const nx = len > 0 ? vx / len : 0;
+        const nz = len > 0 ? vz / len : 0;
+        uWorld += nx * drop * 0.6;
+        vWorld += nz * drop * 0.6;
+      }
       
       uvs.push(uWorld / width, 1.0 - (vWorld / height));
     }
@@ -549,7 +592,7 @@ function BasePlate({ width, height, texture, baseOpacity, baseColor, keyGapX, ke
     geom.computeVertexNormals();
 
     return geom;
-  }, [width, height, keyGapX, keyGapY, topBevel, bottomBevel, sideBevel, topRadius, bottomRadius]);
+  }, [width, height, keyGapX, keyGapY, topBevel, bottomBevel, sideBevel, topRadius, bottomRadius, textureMapping]);
 
   return (
     <mesh position={[0, -0.2, 0]} geometry={geometry} receiveShadow>

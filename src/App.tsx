@@ -41,6 +41,7 @@ export default function App() {
   const [textureOpacity, setTextureOpacity] = useState(1);
   const [baseOpacity, setBaseOpacity] = useState(1);
   const [outOfBoundsMode, setOutOfBoundsMode] = useState('clamp'); // clamp, transparent, repeat, mirror
+  const [textureMapping, setTextureMapping] = useState('fitted'); // fitted, unfolded, projected, per-key
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -417,6 +418,22 @@ export default function App() {
                     <option value="mirror">Mirror Repeat</option>
                   </select>
                 </div>
+
+                <div className="pt-2 border-t border-slate-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-slate-600">Texture Mapping</span>
+                  </div>
+                  <select 
+                    value={textureMapping} 
+                    onChange={(e) => setTextureMapping(e.target.value)}
+                    className="w-full text-xs p-1 border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  >
+                    <option value="fitted">Fitted (No Overlap)</option>
+                    <option value="unfolded">Unfolded (Overlap)</option>
+                    <option value="projected">Planar (Smear)</option>
+                    <option value="per-key">Per-Keycap</option>
+                  </select>
+                </div>
               </div>
             )}
           </div>
@@ -448,6 +465,7 @@ export default function App() {
           textureOpacity={textureOpacity}
           baseOpacity={baseOpacity}
           outOfBoundsMode={outOfBoundsMode}
+          textureMapping={textureMapping}
           showLabels={showLabels}
           labelPosition={labelPosition}
           profile={profile}
