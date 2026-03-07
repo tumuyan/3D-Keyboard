@@ -1,0 +1,5 @@
+{
+  "name": "Keycap 3D Visualizer",
+  "description": "A 3D keyboard visualizer that allows users to input a custom KLE layout and apply a global texture image across all keycaps.",
+  "requestFramePermissions": []
+}
