@@ -334,36 +334,180 @@ function Keycap({
   );
 }
 
-function BasePlate({ width, height, texture, baseOpacity, baseColor, keyGapX, keyGapY }: any) {
+function BasePlate({ width, height, texture, baseOpacity, baseColor, keyGapX, keyGapY, topBevel, bottomBevel, sideBevel, topRadius, bottomRadius }: any) {
   const geometry = useMemo(() => {
-    const geom = new THREE.BoxGeometry(width + 0.5, 0.2, height + 0.5);
-    const pos = geom.attributes.position;
-    const uv = geom.attributes.uv;
+    const W = width + 0.5;
+    const H = height + 0.5;
+    const T = 0.4; // Case thickness
 
-    // Map UVs for the top face to match the global keyboard coordinates
-    for (let i = 0; i < pos.count; i++) {
-      const vx = pos.getX(i);
-      const vy = pos.getY(i);
-      const vz = pos.getZ(i);
+    const M = 24; // vertical segments
+    const N = 12; // corner segments
+    const ptsPerLevel = 4 * (N + 1);
+    
+    const positions = [];
+    const normals = [];
+    const uvs = [];
+    const indices = [];
 
-      // Only map top face (vy > 0)
-      if (vy > 0) {
-        // Shift from local center to global corner
-        const globalX = vx + width / 2;
-        const globalZ = vz + height / 2;
+    // Helper to get inset at height y
+    const getInset = (B, y) => {
+      if (B <= 0.001) return 0;
+      const startY = T/2 - B;
+      if (y <= startY) return 0;
+      const dy = y - startY;
+      return B - Math.sqrt(Math.max(0, B*B - dy*dy));
+    };
 
-        const u = globalX / width;
-        const v = 1.0 - (globalZ / height);
-        
-        uv.setXY(i, u, v);
+    // Generate perimeters
+    const perimeters = [];
+    for (let j = 0; j <= M; j++) {
+      // Non-linear y distribution to concentrate points near the top bevel
+      // using a sine curve to cluster points near the top
+      const t = Math.sin((j / M) * (Math.PI / 2));
+      const y = -T/2 + t * T;
+      
+      const iTop = getInset(topBevel, y);
+      const iBot = getInset(bottomBevel, y);
+      const iSide = getInset(sideBevel, y);
+
+      const minX = -W/2 + iSide;
+      const maxX = W/2 - iSide;
+      const minZ = -H/2 + iTop;
+      const maxZ = H/2 - iBot;
+
+      let rTop = Math.max(0.001, topRadius - Math.max(iSide, iTop));
+      let rBot = Math.max(0.001, bottomRadius - Math.max(iSide, iBot));
+
+      rTop = Math.min(rTop, (maxX - minX)/2.01, (maxZ - minZ)/2.01);
+      rBot = Math.min(rBot, (maxX - minX)/2.01, (maxZ - minZ)/2.01);
+
+      const pts = [];
+      
+      // Top-Right
+      let cx = maxX - rTop; let cz = minZ + rTop;
+      for(let i=0; i<=N; i++) {
+        const a = -Math.PI/2 + (i/N)*Math.PI/2;
+        pts.push([cx + rTop*Math.cos(a), cz + rTop*Math.sin(a)]);
+      }
+      // Bottom-Right
+      cx = maxX - rBot; cz = maxZ - rBot;
+      for(let i=0; i<=N; i++) {
+        const a = 0 + (i/N)*Math.PI/2;
+        pts.push([cx + rBot*Math.cos(a), cz + rBot*Math.sin(a)]);
+      }
+      // Bottom-Left
+      cx = minX + rBot; cz = maxZ - rBot;
+      for(let i=0; i<=N; i++) {
+        const a = Math.PI/2 + (i/N)*Math.PI/2;
+        pts.push([cx + rBot*Math.cos(a), cz + rBot*Math.sin(a)]);
+      }
+      // Top-Left
+      cx = minX + rTop; cz = minZ + rTop;
+      for(let i=0; i<=N; i++) {
+        const a = Math.PI + (i/N)*Math.PI/2;
+        pts.push([cx + rTop*Math.cos(a), cz + rTop*Math.sin(a)]);
+      }
+      perimeters.push(pts);
+    }
+
+    // Add vertices for sides
+    for (let j = 0; j <= M; j++) {
+      const t = Math.sin((j / M) * (Math.PI / 2));
+      const y = -T/2 + t * T;
+      const pts = perimeters[j];
+      
+      // Calculate perimeter length for UVs
+      let totalLen = 0;
+      const lengths = [0];
+      for (let i = 1; i < pts.length; i++) {
+        const dx = pts[i][0] - pts[i-1][0];
+        const dz = pts[i][1] - pts[i-1][1];
+        totalLen += Math.sqrt(dx*dx + dz*dz);
+        lengths.push(totalLen);
+      }
+      // close the loop
+      const dx = pts[0][0] - pts[pts.length-1][0];
+      const dz = pts[0][1] - pts[pts.length-1][1];
+      totalLen += Math.sqrt(dx*dx + dz*dz);
+      lengths.push(totalLen);
+
+      for (let i = 0; i < pts.length; i++) {
+        positions.push(pts[i][0], y, pts[i][1]);
+        uvs.push(lengths[i] / totalLen, j / M);
+      }
+      // Duplicate first point to close the UV seam
+      positions.push(pts[0][0], y, pts[0][1]);
+      uvs.push(1, j / M);
+    }
+
+    const vertsPerLevel = ptsPerLevel + 1;
+
+    // Side indices
+    for (let j = 0; j < M; j++) {
+      for (let i = 0; i < ptsPerLevel; i++) {
+        const p1 = j * vertsPerLevel + i;
+        const p2 = j * vertsPerLevel + i + 1;
+        const p3 = (j + 1) * vertsPerLevel + i;
+        const p4 = (j + 1) * vertsPerLevel + i + 1;
+
+        indices.push(p1, p3, p2);
+        indices.push(p2, p3, p4);
       }
     }
-    uv.needsUpdate = true;
+
+    // Top cap
+    const topCenterIdx = positions.length / 3;
+    positions.push(0, T/2, 0);
+    uvs.push(0.5, 0.5); // Center UV
+    
+    // Top cap perimeter vertices
+    const topStartIdx = positions.length / 3;
+    const topPts = perimeters[M];
+    for (let i = 0; i < topPts.length; i++) {
+      const vx = topPts[i][0];
+      const vz = topPts[i][1];
+      positions.push(vx, T/2, vz);
+      // Map UVs to match global keyboard coordinates
+      const u = (vx + width / 2) / width;
+      const v = 1.0 - ((vz + height / 2) / height);
+      uvs.push(u, v);
+    }
+    
+    for (let i = 0; i < topPts.length; i++) {
+      const p1 = topStartIdx + i;
+      const p2 = topStartIdx + ((i + 1) % topPts.length);
+      indices.push(p1, topCenterIdx, p2);
+    }
+
+    // Bottom cap
+    const botCenterIdx = positions.length / 3;
+    positions.push(0, -T/2, 0);
+    uvs.push(0.5, 0.5);
+    
+    const botStartIdx = positions.length / 3;
+    const botPts = perimeters[0];
+    for (let i = 0; i < botPts.length; i++) {
+      positions.push(botPts[i][0], -T/2, botPts[i][1]);
+      uvs.push(0, 0); // Bottom doesn't need precise UV mapping
+    }
+
+    for (let i = 0; i < botPts.length; i++) {
+      const p1 = botStartIdx + i;
+      const p2 = botStartIdx + ((i + 1) % botPts.length);
+      indices.push(p1, p2, botCenterIdx);
+    }
+
+    const geom = new THREE.BufferGeometry();
+    geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geom.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+    geom.setIndex(indices);
+    geom.computeVertexNormals();
+
     return geom;
-  }, [width, height, keyGapX, keyGapY]);
+  }, [width, height, keyGapX, keyGapY, topBevel, bottomBevel, sideBevel, topRadius, bottomRadius]);
 
   return (
-    <mesh position={[0, -0.1, 0]} geometry={geometry} receiveShadow>
+    <mesh position={[0, -0.2, 0]} geometry={geometry} receiveShadow>
       <meshStandardMaterial 
         key={`${texture ? texture.uuid : 'no-tex'}-${baseOpacity}`}
         map={(baseOpacity > 0 && texture) ? texture : null} 
@@ -381,7 +525,8 @@ export function KeyboardScene({
   textureScale = 1, textureOffsetX = 0, textureOffsetY = 0, textureAspect = 1, textureRotation = 0,
   textureOpacity = 1, baseOpacity = 1, repeatTexture = false,
   showLabels = true, labelPosition = 'top-left', profile = 'OEM',
-  labelColor = '#334155', labelOutlineColor = '#000000', labelOutlineWidth = 0, fontUrl = FONTS['Inter'], keycapColor = '#e2e8f0', baseColor = '#cbd5e1', keyGapX = 0.1, keyGapY = 0.1
+  labelColor = '#334155', labelOutlineColor = '#000000', labelOutlineWidth = 0, fontUrl = FONTS['Inter'], keycapColor = '#e2e8f0', baseColor = '#cbd5e1', keyGapX = 0.1, keyGapY = 0.1,
+  caseTopEdgeBevel = 0.3, caseBottomEdgeBevel = 0.3, caseSideEdgeBevel = 0.01, caseTopCornerRadius = 0.05, caseBottomCornerRadius = 0.05
 }: any) {
   const { keys, width, height } = useMemo(() => {
     try {
@@ -484,6 +629,11 @@ export function KeyboardScene({
             baseColor={baseColor} 
             keyGapX={keyGapX}
             keyGapY={keyGapY}
+            topBevel={caseTopEdgeBevel}
+            bottomBevel={caseBottomEdgeBevel}
+            sideBevel={caseSideEdgeBevel}
+            topRadius={caseTopCornerRadius}
+            bottomRadius={caseBottomCornerRadius}
           />
 
           {keys.map((k, i) => (

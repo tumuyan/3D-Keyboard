@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { KeyboardScene, PROFILES, FONTS } from './components/Keyboard3D';
-import { Upload, Download, Code, Settings2, Type, ImageIcon, SlidersHorizontal, Palette } from 'lucide-react';
+import { Upload, Download, Code, Settings2, Type, ImageIcon, SlidersHorizontal, Palette, Box } from 'lucide-react';
 
 const DEFAULT_KLE = `[
   [{"a":7},"Q","W","E","R","T","Y","U","I","O","P"],
@@ -19,6 +19,12 @@ export default function App() {
   const [baseColor, setBaseColor] = useState('#cbd5e1');
   const [keyGapX, setKeyGapX] = useState(0.1);
   const [keyGapY, setKeyGapY] = useState(0.1);
+  
+  const [caseTopEdgeBevel, setCaseTopEdgeBevel] = useState(0.3);
+  const [caseBottomEdgeBevel, setCaseBottomEdgeBevel] = useState(0.3);
+  const [caseSideEdgeBevel, setCaseSideEdgeBevel] = useState(0.01);
+  const [caseTopCornerRadius, setCaseTopCornerRadius] = useState(0.05);
+  const [caseBottomCornerRadius, setCaseBottomCornerRadius] = useState(0.05);
   
   const [showLabels, setShowLabels] = useState(true);
   const [labelPosition, setLabelPosition] = useState('top-left');
@@ -114,16 +120,6 @@ export default function App() {
                 />
               </div>
 
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-slate-600">Base Color</span>
-                <input 
-                  type="color" 
-                  value={baseColor} 
-                  onChange={(e) => setBaseColor(e.target.value)}
-                  className="w-8 h-8 rounded cursor-pointer border-0 p-0"
-                />
-              </div>
-
               <div className="space-y-1">
                 <div className="flex justify-between text-xs text-slate-600">
                   <span>Key Gap X</span>
@@ -149,6 +145,85 @@ export default function App() {
                   value={keyGapY} 
                   onChange={(e) => setKeyGapY(parseFloat(e.target.value))} 
                   className="w-full accent-indigo-600" 
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Keyboard Case Settings */}
+          <div className="space-y-4">
+            <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 border-b border-slate-100 pb-2">
+              <Box className="w-4 h-4" />
+              Keyboard Case
+            </label>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-600">Base Color</span>
+                <input 
+                  type="color" 
+                  value={baseColor} 
+                  onChange={(e) => setBaseColor(e.target.value)}
+                  className="w-8 h-8 rounded cursor-pointer border-0 p-0"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs text-slate-600">
+                  <span>Top Edge Bevel</span>
+                  <span>{caseTopEdgeBevel.toFixed(2)}</span>
+                </div>
+                <input 
+                  type="range" min="0" max="0.4" step="0.01" 
+                  value={caseTopEdgeBevel} onChange={(e) => setCaseTopEdgeBevel(parseFloat(e.target.value))}
+                  className="w-full accent-indigo-600"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs text-slate-600">
+                  <span>Bottom Edge Bevel</span>
+                  <span>{caseBottomEdgeBevel.toFixed(2)}</span>
+                </div>
+                <input 
+                  type="range" min="0" max="0.4" step="0.01" 
+                  value={caseBottomEdgeBevel} onChange={(e) => setCaseBottomEdgeBevel(parseFloat(e.target.value))}
+                  className="w-full accent-indigo-600"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs text-slate-600">
+                  <span>Side Edge Bevel</span>
+                  <span>{caseSideEdgeBevel.toFixed(2)}</span>
+                </div>
+                <input 
+                  type="range" min="0" max="0.4" step="0.01" 
+                  value={caseSideEdgeBevel} onChange={(e) => setCaseSideEdgeBevel(parseFloat(e.target.value))}
+                  className="w-full accent-indigo-600"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs text-slate-600">
+                  <span>Top Corner Radius</span>
+                  <span>{caseTopCornerRadius.toFixed(2)}</span>
+                </div>
+                <input 
+                  type="range" min="0" max="0.5" step="0.01" 
+                  value={caseTopCornerRadius} onChange={(e) => setCaseTopCornerRadius(parseFloat(e.target.value))}
+                  className="w-full accent-indigo-600"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs text-slate-600">
+                  <span>Bottom Corner Radius</span>
+                  <span>{caseBottomCornerRadius.toFixed(2)}</span>
+                </div>
+                <input 
+                  type="range" min="0" max="0.5" step="0.01" 
+                  value={caseBottomCornerRadius} onChange={(e) => setCaseBottomCornerRadius(parseFloat(e.target.value))}
+                  className="w-full accent-indigo-600"
                 />
               </div>
             </div>
@@ -376,6 +451,11 @@ export default function App() {
           baseColor={baseColor}
           keyGapX={keyGapX}
           keyGapY={keyGapY}
+          caseTopEdgeBevel={caseTopEdgeBevel}
+          caseBottomEdgeBevel={caseBottomEdgeBevel}
+          caseSideEdgeBevel={caseSideEdgeBevel}
+          caseTopCornerRadius={caseTopCornerRadius}
+          caseBottomCornerRadius={caseBottomCornerRadius}
         />
         
         {/* Overlay instructions */}
