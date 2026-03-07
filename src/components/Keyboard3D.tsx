@@ -81,7 +81,8 @@ export function parseKLE(kleString: string, keyGapX: number = 0, keyGapY: number
 function Keycap({ 
   keyData, keyboardWidth, keyboardHeight, texture, profile, 
   showLabels, labelPosition, textureOpacity,
-  labelColor, labelOutlineColor, labelOutlineWidth, fontUrl, keycapColor, keyGapX, keyGapY
+  labelColor, labelOutlineColor, labelOutlineWidth, fontUrl, keycapColor, keyGapX, keyGapY,
+  outOfBoundsMode
 }: any) {
   const geometry = useMemo(() => {
     const { w, h, rowIndex } = keyData;
@@ -305,13 +306,34 @@ function Keycap({
   return (
     <mesh position={[posX, 0, posZ]} geometry={geometry} castShadow receiveShadow>
       <meshStandardMaterial 
-        key={`${texture ? texture.uuid : 'no-tex'}-${textureOpacity}`}
+        key={`${texture ? texture.uuid : 'no-tex'}-${textureOpacity}-${outOfBoundsMode}`}
         map={(textureOpacity > 0 && texture) ? texture : null} 
-        color={(textureOpacity > 0 && texture) ? "white" : keycapColor}
+        color={keycapColor}
         roughness={0.6}
         metalness={0.1}
         transparent={textureOpacity < 1}
         opacity={textureOpacity > 0 ? textureOpacity : 1}
+        customProgramCacheKey={() => outOfBoundsMode}
+        onBeforeCompile={(shader) => {
+          shader.fragmentShader = shader.fragmentShader.replace(
+            `#include <map_fragment>`,
+            `
+            #ifdef USE_MAP
+              vec4 texelColor = texture2D( map, vMapUv );
+              
+              bool outOfBounds = vMapUv.x < 0.0 || vMapUv.x > 1.0 || vMapUv.y < 0.0 || vMapUv.y > 1.0;
+              
+              ${outOfBoundsMode === 'transparent' ? `
+              if (outOfBounds) {
+                texelColor = vec4(0.0);
+              }
+              ` : ''}
+              
+              diffuseColor.rgb = mix(diffuseColor.rgb, texelColor.rgb, texelColor.a);
+            #endif
+            `
+          );
+        }}
       />
       {showLabels && keyData.label && (
         <Suspense fallback={null}>
@@ -334,7 +356,7 @@ function Keycap({
   );
 }
 
-function BasePlate({ width, height, texture, baseOpacity, baseColor, keyGapX, keyGapY, topBevel, bottomBevel, sideBevel, topRadius, bottomRadius }: any) {
+function BasePlate({ width, height, texture, baseOpacity, baseColor, keyGapX, keyGapY, topBevel, bottomBevel, sideBevel, topRadius, bottomRadius, outOfBoundsMode }: any) {
   const geometry = useMemo(() => {
     const W = width + 0.5;
     const H = height + 0.5;
@@ -509,12 +531,33 @@ function BasePlate({ width, height, texture, baseOpacity, baseColor, keyGapX, ke
   return (
     <mesh position={[0, -0.2, 0]} geometry={geometry} receiveShadow>
       <meshStandardMaterial 
-        key={`${texture ? texture.uuid : 'no-tex'}-${baseOpacity}`}
+        key={`${texture ? texture.uuid : 'no-tex'}-${baseOpacity}-${outOfBoundsMode}`}
         map={(baseOpacity > 0 && texture) ? texture : null} 
-        color={(baseOpacity > 0 && texture) ? "white" : baseColor} 
+        color={baseColor} 
         roughness={0.8} 
         transparent={baseOpacity < 1}
         opacity={baseOpacity > 0 ? baseOpacity : 1}
+        customProgramCacheKey={() => outOfBoundsMode}
+        onBeforeCompile={(shader) => {
+          shader.fragmentShader = shader.fragmentShader.replace(
+            `#include <map_fragment>`,
+            `
+            #ifdef USE_MAP
+              vec4 texelColor = texture2D( map, vMapUv );
+              
+              bool outOfBounds = vMapUv.x < 0.0 || vMapUv.x > 1.0 || vMapUv.y < 0.0 || vMapUv.y > 1.0;
+              
+              ${outOfBoundsMode === 'transparent' ? `
+              if (outOfBounds) {
+                texelColor = vec4(0.0);
+              }
+              ` : ''}
+              
+              diffuseColor.rgb = mix(diffuseColor.rgb, texelColor.rgb, texelColor.a);
+            #endif
+            `
+          );
+        }}
       />
     </mesh>
   );
@@ -523,7 +566,7 @@ function BasePlate({ width, height, texture, baseOpacity, baseColor, keyGapX, ke
 export function KeyboardScene({ 
   kleData, textureUrl, canvasRef,
   textureScale = 1, textureOffsetX = 0, textureOffsetY = 0, textureAspect = 1, textureRotation = 0,
-  textureOpacity = 1, baseOpacity = 1, repeatTexture = false,
+  textureOpacity = 1, baseOpacity = 1, outOfBoundsMode = 'clamp',
   showLabels = true, labelPosition = 'top-left', profile = 'OEM',
   labelColor = '#334155', labelOutlineColor = '#000000', labelOutlineWidth = 0, fontUrl = FONTS['Inter'], keycapColor = '#e2e8f0', baseColor = '#cbd5e1', keyGapX = 0.1, keyGapY = 0.1,
   caseTopEdgeBevel = 0.3, caseBottomEdgeBevel = 0.3, caseSideEdgeBevel = 0.01, caseTopCornerRadius = 0.05, caseBottomCornerRadius = 0.05
@@ -595,13 +638,19 @@ export function KeyboardScene({
       }
       
       // Handle repeat vs clamp
-      const wrapMode = repeatTexture ? THREE.RepeatWrapping : THREE.ClampToEdgeWrapping;
+      let wrapMode = THREE.ClampToEdgeWrapping;
+      if (outOfBoundsMode === 'repeat') {
+        wrapMode = THREE.RepeatWrapping;
+      } else if (outOfBoundsMode === 'mirror') {
+        wrapMode = THREE.MirroredRepeatWrapping;
+      }
+      
       texture.wrapS = wrapMode;
       texture.wrapT = wrapMode;
       
       texture.needsUpdate = true;
     }
-  }, [texture, width, height, textureScale, textureOffsetX, textureOffsetY, textureAspect, textureRotation, repeatTexture]);
+  }, [texture, width, height, textureScale, textureOffsetX, textureOffsetY, textureAspect, textureRotation, outOfBoundsMode]);
 
   return (
     <Canvas 
@@ -634,6 +683,7 @@ export function KeyboardScene({
             sideBevel={caseSideEdgeBevel}
             topRadius={caseTopCornerRadius}
             bottomRadius={caseBottomCornerRadius}
+            outOfBoundsMode={outOfBoundsMode}
           />
 
           {keys.map((k, i) => (
@@ -654,6 +704,7 @@ export function KeyboardScene({
               keycapColor={keycapColor}
               keyGapX={keyGapX}
               keyGapY={keyGapY}
+              outOfBoundsMode={outOfBoundsMode}
             />
           ))}
         </group>

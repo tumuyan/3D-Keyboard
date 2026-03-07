@@ -40,7 +40,7 @@ export default function App() {
   const [textureRotation, setTextureRotation] = useState(0);
   const [textureOpacity, setTextureOpacity] = useState(1);
   const [baseOpacity, setBaseOpacity] = useState(1);
-  const [repeatTexture, setRepeatTexture] = useState(false);
+  const [outOfBoundsMode, setOutOfBoundsMode] = useState('clamp'); // clamp, transparent, repeat, mirror
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -402,12 +402,20 @@ export default function App() {
                   <input type="range" min="0" max="1" step="0.01" value={baseOpacity} onChange={(e) => setBaseOpacity(parseFloat(e.target.value))} className="w-full accent-indigo-600" />
                 </div>
 
-                <div className="flex items-center justify-between pt-2 border-t border-slate-200">
-                  <span className="text-xs text-slate-600">Repeat Edge Pixels</span>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" className="sr-only peer" checked={!repeatTexture} onChange={(e) => setRepeatTexture(!e.target.checked)} />
-                    <div className="w-7 h-4 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-indigo-600"></div>
-                  </label>
+                <div className="pt-2 border-t border-slate-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs text-slate-600">Out of Bounds Mode</span>
+                  </div>
+                  <select 
+                    value={outOfBoundsMode} 
+                    onChange={(e) => setOutOfBoundsMode(e.target.value)}
+                    className="w-full text-xs p-1 border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  >
+                    <option value="clamp">Clamp to Edge</option>
+                    <option value="transparent">Transparent</option>
+                    <option value="repeat">Repeat</option>
+                    <option value="mirror">Mirror Repeat</option>
+                  </select>
                 </div>
               </div>
             )}
@@ -439,7 +447,7 @@ export default function App() {
           textureRotation={textureRotation}
           textureOpacity={textureOpacity}
           baseOpacity={baseOpacity}
-          repeatTexture={repeatTexture}
+          outOfBoundsMode={outOfBoundsMode}
           showLabels={showLabels}
           labelPosition={labelPosition}
           profile={profile}
