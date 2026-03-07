@@ -206,7 +206,7 @@ function Keycap({
   const posX = physicalX + physicalW / 2 - keyboardWidth / 2;
   const posZ = physicalY + physicalH / 2 - keyboardHeight / 2;
 
-  const getLabelTransform = () => {
+  const { pos: labelPos, rot: labelRot } = useMemo(() => {
     const prof = PROFILES[profile] || PROFILES.OEM;
     const w = physicalW;
     const h = physicalH;
@@ -249,24 +249,38 @@ function Keycap({
       };
     }
     
-    let vy = prof.height + 0.04; // Add bevel thickness
-    const scoopAmount = prof.scoopType === 'spherical' 
-      ? Math.max(0, 0.15 - (vx*vx + vz*vz)*0.08)
-      : Math.max(0, 0.15 - Math.abs(vz)*0.1);
-    vy -= scoopAmount;
-    
     let angle = 0;
     if (prof.tilt) {
       const rowTilts = [8, 4, 0, -4, -8, -8];
       angle = (rowTilts[Math.min(keyData.rowIndex, 5)] || 0) * Math.PI / 180;
-      vy += vz * Math.tan(angle);
+    }
+    
+    const raycaster = new THREE.Raycaster(
+      new THREE.Vector3(vx, prof.height + 1, vz),
+      new THREE.Vector3(0, -1, 0)
+    );
+    const tempMesh = new THREE.Mesh(geometry);
+    tempMesh.updateMatrixWorld();
+    const intersects = raycaster.intersectObject(tempMesh);
+    
+    let vy = prof.height + 0.04;
+    if (intersects.length > 0) {
+      vy = intersects[0].point.y;
+    } else {
+      const scoopAmount = prof.scoopType === 'spherical' 
+        ? Math.max(0, 0.15 - (vx*vx + vz*vz)*0.08)
+        : Math.max(0, 0.15 - Math.abs(vz)*0.1);
+      vy -= scoopAmount;
+      if (prof.tilt) {
+        vy += vz * Math.tan(angle);
+      }
     }
     
     return {
-      pos: [vx, vy + 0.005, vz],
-      rot: [-Math.PI / 2 + angle, 0, 0]
+      pos: [vx, vy + 0.01, vz],
+      rot: [-Math.PI / 2 - angle, 0, 0]
     };
-  };
+  }, [profile, physicalW, physicalH, labelPosition, keyData.h, keyData.rowIndex, geometry]);
 
   const getLabelAnchor = () => {
     switch(labelPosition) {
@@ -286,7 +300,6 @@ function Keycap({
     }
   };
 
-  const { pos: labelPos, rot: labelRot } = getLabelTransform();
   const labelAnchor = getLabelAnchor();
 
   return (
