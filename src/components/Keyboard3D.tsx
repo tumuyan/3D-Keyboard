@@ -438,28 +438,39 @@ function BasePlate({ width, height, texture, baseOpacity, baseColor, keyGapX, ke
       const y = -T/2 + t * T;
       const pts = perimeters[j];
       
-      // Calculate perimeter length for UVs
-      let totalLen = 0;
-      const lengths = [0];
-      for (let i = 1; i < pts.length; i++) {
-        const dx = pts[i][0] - pts[i-1][0];
-        const dz = pts[i][1] - pts[i-1][1];
-        totalLen += Math.sqrt(dx*dx + dz*dz);
-        lengths.push(totalLen);
-      }
-      // close the loop
-      const dx = pts[0][0] - pts[pts.length-1][0];
-      const dz = pts[0][1] - pts[pts.length-1][1];
-      totalLen += Math.sqrt(dx*dx + dz*dz);
-      lengths.push(totalLen);
-
       for (let i = 0; i < pts.length; i++) {
-        positions.push(pts[i][0], y, pts[i][1]);
-        uvs.push(lengths[i] / totalLen, j / M);
+        const vx = pts[i][0];
+        const vz = pts[i][1];
+        positions.push(vx, y, vz);
+        
+        let uWorld = vx + width / 2;
+        let vWorld = vz + height / 2;
+        
+        const drop = T/2 - y;
+        const len = Math.sqrt(vx*vx + vz*vz);
+        const nx = len > 0 ? vx / len : 0;
+        const nz = len > 0 ? vz / len : 0;
+        
+        uWorld += nx * drop * 0.6;
+        vWorld += nz * drop * 0.6;
+        
+        uvs.push(uWorld / width, 1.0 - (vWorld / height));
       }
-      // Duplicate first point to close the UV seam
-      positions.push(pts[0][0], y, pts[0][1]);
-      uvs.push(1, j / M);
+      // Duplicate first point to close the geometry seam
+      const vx = pts[0][0];
+      const vz = pts[0][1];
+      positions.push(vx, y, vz);
+      
+      let uWorld = vx + width / 2;
+      let vWorld = vz + height / 2;
+      const drop = T/2 - y;
+      const len = Math.sqrt(vx*vx + vz*vz);
+      const nx = len > 0 ? vx / len : 0;
+      const nz = len > 0 ? vz / len : 0;
+      uWorld += nx * drop * 0.6;
+      vWorld += nz * drop * 0.6;
+      
+      uvs.push(uWorld / width, 1.0 - (vWorld / height));
     }
 
     const vertsPerLevel = ptsPerLevel + 1;
@@ -509,8 +520,20 @@ function BasePlate({ width, height, texture, baseOpacity, baseColor, keyGapX, ke
     const botStartIdx = positions.length / 3;
     const botPts = perimeters[0];
     for (let i = 0; i < botPts.length; i++) {
-      positions.push(botPts[i][0], -T/2, botPts[i][1]);
-      uvs.push(0, 0); // Bottom doesn't need precise UV mapping
+      const vx = botPts[i][0];
+      const vz = botPts[i][1];
+      positions.push(vx, -T/2, vz);
+      
+      let uWorld = vx + width / 2;
+      let vWorld = vz + height / 2;
+      const drop = T;
+      const len = Math.sqrt(vx*vx + vz*vz);
+      const nx = len > 0 ? vx / len : 0;
+      const nz = len > 0 ? vz / len : 0;
+      uWorld += nx * drop * 0.6;
+      vWorld += nz * drop * 0.6;
+      
+      uvs.push(uWorld / width, 1.0 - (vWorld / height));
     }
 
     for (let i = 0; i < botPts.length; i++) {
