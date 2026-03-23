@@ -82,7 +82,7 @@ function Keycap({
   keyData, keyboardWidth, keyboardHeight, texture, profile, 
   showLabels, labelPosition, textureOpacity,
   labelColor, labelOutlineColor, labelOutlineWidth, fontUrl, keycapColor, keyGapX, keyGapY,
-  outOfBoundsMode, textureMapping
+  outOfBoundsMode, textureMapping, imageAspect, heightAboveCase
 }: any) {
   const geometry = useMemo(() => {
     const { w, h, rowIndex } = keyData;
@@ -144,84 +144,108 @@ function Keycap({
       
       // Taper
       const scale = 1 - (1 - topScale) * ny;
-      vx *= scale;
-      vz *= scale;
+      let vxTapered = vx * scale;  // 用于几何
+      let vzTapered = vz * scale;
       
       // Scoop
       if (ny > 0.5) {
         const scoopAmount = scoopType === 'spherical' 
-          ? Math.max(0, 0.15 - (vx*vx + vz*vz)*0.08)
-          : Math.max(0, 0.15 - Math.abs(vz)*0.1);
+          ? Math.max(0, 0.15 - (vxTapered*vxTapered + vzTapered*vzTapered)*0.08)
+          : Math.max(0, 0.15 - Math.abs(vzTapered)*0.1);
           
         vy -= scoopAmount * (ny - 0.5) * 2;
       }
       
       // 9-slice stretch
       if (stretchX > 0) {
-        if (vx > 0.001) vx += stretchX / 2;
-        else if (vx < -0.001) vx -= stretchX / 2;
+        if (vxTapered > 0.001) vxTapered += stretchX / 2;
+        else if (vxTapered < -0.001) vxTapered -= stretchX / 2;
       }
       
       if (stretchZ > 0) {
-        if (vz > 0.001) vz += stretchZ / 2;
-        else if (vz < -0.001) vz -= stretchZ / 2;
+        if (vzTapered > 0.001) vzTapered += stretchZ / 2;
+        else if (vzTapered < -0.001) vzTapered -= stretchZ / 2;
       }
       
       // Tilt (apply after stretch for continuous slope on tall keys)
       if (ny > 0.5 && tilt) {
         const rowTilts = [8, 4, 0, -4, -8, -8];
         const angle = (rowTilts[Math.min(rowIndex, 5)] || 0) * Math.PI / 180;
-        vy += vz * Math.tan(angle);
+        vy += vzTapered * Math.tan(angle);
       }
       
-      pos.setXYZ(i, vx, vy, vz);
+      pos.setXYZ(i, vxTapered, vy, vzTapered);
       
       // 5-Face UV Mapping
       const physicalX = keyData.x * (1 + keyGapX);
       const physicalY = keyData.y * (1 + keyGapY);
       
-      let uWorld = physicalX + physicalW / 2 + vx;
-      let vWorld = physicalY + physicalH / 2 + vz;
+      // UV 计算使用的宽度/高度（考虑 stretch）
+      const uvW = physicalW;
+      const uvH = physicalH;
       
       let u = 0;
       let v = 0;
       
       if (textureMapping === 'projected') {
+        // 投影模式：侧面会被"涂抹"到顶面位置
+        const uWorld = physicalX + uvW / 2 + vxTapered;
+        const vWorld = physicalY + uvH / 2 + vzTapered;
         u = uWorld / keyboardWidth;
         v = 1.0 - (vWorld / keyboardHeight);
       } else if (textureMapping === 'per-key') {
+        // 每键独立模式：每个键帽显示完整贴图，保持图片原始长宽比
         const drop = height - vy;
-        let localU = vx + nx * drop * 0.6;
-        let localV = vz + nz * drop * 0.6;
-        const maxU = physicalW / 2 + height * 0.6;
-        const maxV = physicalH / 2 + height * 0.6;
-        u = (localU + maxU) / (2 * maxU);
-        v = 1.0 - ((localV + maxV) / (2 * maxV));
+        let localU = vxTapered + nx * drop * 0.6;
+        let localV = vzTapered + nz * drop * 0.6;
+        
+        // 计算几何边界（底面尺寸 + 侧面展开）
+        const sideExpand = height * 0.6;
+        const boundU = uvW / 2 + sideExpand;
+        const boundV = uvH / 2 + sideExpand;
+        
+        // 图片的实际长宽比
+        const imgAsp = imageAspect || 1;
+        
+        // 计算缩放因子，保证 UV 在 [0, 1] 范围内，同时保持贴图长宽比
+        // scaleU >= 2 * boundU (保证 u 在 [0, 1])
+        // scaleV >= 2 * boundV (保证 v 在 [0, 1])
+        // scaleU / scaleV = imgAsp (保持贴图长宽比)
+        const scaleV = 2 * Math.max(boundV, boundU / imgAsp);
+        const scaleU = imgAsp * scaleV;
+        
+        // UV 坐标映射：几何空间 -> UV 空间
+        u = localU / scaleU + 0.5;
+        v = 0.5 - localV / scaleV;
       } else if (textureMapping === 'fitted') {
+        // 无重叠模式：每个按键 UV 范围恰好匹配其物理占用空间
         const drop = height - vy;
-        let localU = vx + nx * drop * 0.6;
-        let localV = vz + nz * drop * 0.6;
+        // 使用实际几何位置
+        let localU = vxTapered + nx * drop * 0.6;
+        let localV = vzTapered + nz * drop * 0.6;
         
-        const maxLocalU = physicalW / 2 + height * 0.6;
-        const maxLocalV = physicalH / 2 + height * 0.6;
+        // 侧面展开范围
+        const maxLocalU = uvW / 2 + height * 0.6;
+        const maxLocalV = uvH / 2 + height * 0.6;
         
-        const targetMaxU = (physicalW + keyGapX) / 2;
-        const targetMaxV = (physicalH + keyGapY) / 2;
+        // 目标：按键实际占用空间（含间隙）
+        const targetMaxU = (uvW + keyGapX) / 2;
+        const targetMaxV = (uvH + keyGapY) / 2;
         
+        // 将侧面展开压缩到目标空间
         localU = localU * (targetMaxU / maxLocalU);
         localV = localV * (targetMaxV / maxLocalV);
         
-        uWorld = physicalX + physicalW / 2 + localU;
-        vWorld = physicalY + physicalH / 2 + localV;
-        
+        const uWorld = physicalX + uvW / 2 + localU;
+        const vWorld = physicalY + uvH / 2 + localV;
         u = uWorld / keyboardWidth;
         v = 1.0 - (vWorld / keyboardHeight);
       } else {
-        // unfolded (default)
+        // unfolded (default): 全局连续，侧面展开
         const drop = height - vy;
-        uWorld += nx * drop * 0.6;
-        vWorld += nz * drop * 0.6;
-        
+        // 使用 taper 后的坐标进行 stretch 感知
+        let uWorld = physicalX + uvW / 2 + vxTapered + nx * drop * 0.6;
+        let vWorld = physicalY + uvH / 2 + vzTapered + nz * drop * 0.6;
         u = uWorld / keyboardWidth;
         v = 1.0 - (vWorld / keyboardHeight);
       }
@@ -232,7 +256,7 @@ function Keycap({
     uv.needsUpdate = true;
     geom.computeVertexNormals();
     return geom;
-  }, [keyData, keyboardWidth, keyboardHeight, profile, keyGapX, keyGapY, textureMapping]);
+  }, [keyData, keyboardWidth, keyboardHeight, profile, keyGapX, keyGapY, textureMapping, imageAspect]);
 
   const physicalX = keyData.x * (1 + keyGapX);
   const physicalY = keyData.y * (1 + keyGapY);
@@ -339,9 +363,9 @@ function Keycap({
   const labelAnchor = getLabelAnchor();
 
   return (
-    <mesh position={[posX, 0, posZ]} geometry={geometry} castShadow receiveShadow>
+    <mesh position={[posX, heightAboveCase, posZ]} geometry={geometry} castShadow receiveShadow>
       <meshStandardMaterial 
-        key={`${texture ? texture.uuid : 'no-tex'}-${textureOpacity}-${outOfBoundsMode}`}
+        key={`${texture ? texture.uuid : 'no-tex'}-${textureOpacity}-${outOfBoundsMode}-${textureMapping}`}
         map={(textureOpacity > 0 && texture) ? texture : null} 
         color={keycapColor}
         roughness={0.6}
@@ -597,7 +621,7 @@ function BasePlate({ width, height, texture, baseOpacity, baseColor, keyGapX, ke
   return (
     <mesh position={[0, -0.2, 0]} geometry={geometry} receiveShadow>
       <meshStandardMaterial 
-        key={`${texture ? texture.uuid : 'no-tex'}-${baseOpacity}-${outOfBoundsMode}`}
+        key={`${texture ? texture.uuid : 'no-tex'}-${baseOpacity}-${outOfBoundsMode}-${textureMapping}`}
         map={(baseOpacity > 0 && texture) ? texture : null} 
         color={baseColor} 
         roughness={0.8} 
@@ -632,10 +656,11 @@ function BasePlate({ width, height, texture, baseOpacity, baseColor, keyGapX, ke
 export function KeyboardScene({ 
   kleData, textureUrl, canvasRef,
   textureScale = 1, textureOffsetX = 0, textureOffsetY = 0, textureAspect = 1, textureRotation = 0,
-  textureOpacity = 1, baseOpacity = 1, outOfBoundsMode = 'clamp',
+  textureOpacity = 1, baseOpacity = 1, outOfBoundsMode = 'clamp', textureMapping = 'projected',
   showLabels = true, labelPosition = 'top-left', profile = 'OEM',
   labelColor = '#334155', labelOutlineColor = '#000000', labelOutlineWidth = 0, fontUrl = FONTS['Inter'], keycapColor = '#e2e8f0', baseColor = '#cbd5e1', keyGapX = 0.1, keyGapY = 0.1,
-  caseTopEdgeBevel = 0.3, caseBottomEdgeBevel = 0.3, caseSideEdgeBevel = 0.01, caseTopCornerRadius = 0.05, caseBottomCornerRadius = 0.05
+  caseTopEdgeBevel = 0.3, caseBottomEdgeBevel = 0.3, caseSideEdgeBevel = 0.01, caseTopCornerRadius = 0.05, caseBottomCornerRadius = 0.05,
+  keycapHeightAboveCase = 0.02
 }: any) {
   const { keys, width, height } = useMemo(() => {
     try {
@@ -647,10 +672,12 @@ export function KeyboardScene({
   }, [kleData, keyGapX, keyGapY]);
 
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
+  const [imageAspect, setImageAspect] = useState(1);
 
   useEffect(() => {
     if (!textureUrl) {
       setTexture(null);
+      setImageAspect(1);
       return;
     }
     
@@ -660,6 +687,12 @@ export function KeyboardScene({
       (loadedTex) => {
         loadedTex.colorSpace = THREE.SRGBColorSpace;
         setTexture(loadedTex);
+        // 自动检测图片长宽比
+        if (loadedTex.image) {
+          const img = loadedTex.image as HTMLImageElement;
+          const aspect = (img.width || 1) / (img.height || 1);
+          setImageAspect(aspect);
+        }
       },
       undefined,
       (err) => {
@@ -686,19 +719,46 @@ export function KeyboardScene({
           coverScaleY = imgAspect / kbAspect;
         }
         
-        // Reset matrix to identity
-        texture.matrix.identity();
+        // (coverScale no longer used – textureAspect replaces it)
         
-        // Apply transformations in correct order:
-        // 1. Move origin to center
-        // 2. Rotate
-        // 3. Scale (including cover aspect ratio and user scale)
-        // 4. Move back and apply user offset
-        texture.matrix
-          .translate(-0.5, -0.5)
-          .rotate(-textureRotation * Math.PI / 180)
-          .scale(coverScaleX / textureScale, coverScaleY / (textureScale * textureAspect))
-          .translate(0.5 - textureOffsetX, 0.5 + textureOffsetY);
+        // Build transformation matrix
+        // Rotation is corrected for UV space non-isotropy so it appears
+        // distortion-free when viewed from above.  textureAspect then
+        // applies an intentional stretch in the screen-U direction.
+        // Order: M = Stretch(textureAspect) × CorrectedRotation
+        
+        const s = 1 / textureScale;
+        const radians = textureRotation * Math.PI / 180;
+        const cos = Math.cos(radians);
+        const sin = Math.sin(radians);
+        
+        // Corrected rotation coefficients (distortion-free in world space)
+        let aRot, bRot, cRot, dRot;
+        if (textureMapping === 'per-key') {
+          const imgAsp = imageAspect || 1;
+          aRot = s * cos;
+          bRot = -s * sin / imgAsp;
+          cRot = s * sin * imgAsp;
+          dRot = s * cos;
+        } else {
+          const kbAspect = width / height;
+          aRot = s * cos;
+          bRot = -s * sin / kbAspect;
+          cRot = s * sin * kbAspect;
+          dRot = s * cos;
+        }
+        
+        // Apply textureAspect stretch on the U output axis (screen-aligned)
+        const a = textureAspect * aRot;
+        const b = textureAspect * bRot;
+        const c = cRot;
+        const d = dRot;
+        
+        // Rotate around center (0.5, 0.5), then apply offset
+        const tx = 0.5 - textureOffsetX - 0.5 * (a + b);
+        const ty = 0.5 + textureOffsetY - 0.5 * (c + d);
+        
+        texture.matrix.set(a, b, tx, c, d, ty, 0, 0, 1);
           
         texture.matrixAutoUpdate = false;
       }
@@ -716,7 +776,7 @@ export function KeyboardScene({
       
       texture.needsUpdate = true;
     }
-  }, [texture, width, height, textureScale, textureOffsetX, textureOffsetY, textureAspect, textureRotation, outOfBoundsMode]);
+  }, [texture, width, height, textureScale, textureOffsetX, textureOffsetY, textureAspect, textureRotation, outOfBoundsMode, textureMapping]);
 
   return (
     <Canvas 
@@ -750,6 +810,7 @@ export function KeyboardScene({
             topRadius={caseTopCornerRadius}
             bottomRadius={caseBottomCornerRadius}
             outOfBoundsMode={outOfBoundsMode}
+            textureMapping={textureMapping}
           />
 
           {keys.map((k, i) => (
@@ -771,6 +832,9 @@ export function KeyboardScene({
               keyGapX={keyGapX}
               keyGapY={keyGapY}
               outOfBoundsMode={outOfBoundsMode}
+              textureMapping={textureMapping}
+              imageAspect={imageAspect}
+              heightAboveCase={keycapHeightAboveCase}
             />
           ))}
         </group>

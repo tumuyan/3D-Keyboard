@@ -25,6 +25,7 @@ export default function App() {
   const [caseSideEdgeBevel, setCaseSideEdgeBevel] = useState(0.01);
   const [caseTopCornerRadius, setCaseTopCornerRadius] = useState(0.05);
   const [caseBottomCornerRadius, setCaseBottomCornerRadius] = useState(0.05);
+  const [keycapHeightAboveCase, setKeycapHeightAboveCase] = useState(0.02);
   
   const [showLabels, setShowLabels] = useState(true);
   const [labelPosition, setLabelPosition] = useState('top-left');
@@ -41,7 +42,7 @@ export default function App() {
   const [textureOpacity, setTextureOpacity] = useState(1);
   const [baseOpacity, setBaseOpacity] = useState(1);
   const [outOfBoundsMode, setOutOfBoundsMode] = useState('clamp'); // clamp, transparent, repeat, mirror
-  const [textureMapping, setTextureMapping] = useState('fitted'); // fitted, unfolded, projected, per-key
+  const [textureMapping, setTextureMapping] = useState('projected'); // fitted, unfolded, projected, per-key
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -145,6 +146,20 @@ export default function App() {
                   min="0" max="0.3" step="0.01" 
                   value={keyGapY} 
                   onChange={(e) => setKeyGapY(parseFloat(e.target.value))} 
+                  className="w-full accent-indigo-600" 
+                />
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex justify-between text-xs text-slate-600">
+                  <span>Height Above Case</span>
+                  <span>{keycapHeightAboveCase.toFixed(2)}</span>
+                </div>
+                <input 
+                  type="range" 
+                  min="0" max="0.5" step="0.01" 
+                  value={keycapHeightAboveCase} 
+                  onChange={(e) => setKeycapHeightAboveCase(parseFloat(e.target.value))} 
                   className="w-full accent-indigo-600" 
                 />
               </div>
@@ -482,6 +497,7 @@ export default function App() {
           caseSideEdgeBevel={caseSideEdgeBevel}
           caseTopCornerRadius={caseTopCornerRadius}
           caseBottomCornerRadius={caseBottomCornerRadius}
+          keycapHeightAboveCase={keycapHeightAboveCase}
         />
         
         {/* Overlay instructions */}
