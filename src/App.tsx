@@ -43,6 +43,7 @@ export default function App() {
   const [baseOpacity, setBaseOpacity] = useState(1);
   const [outOfBoundsMode, setOutOfBoundsMode] = useState('clamp'); // clamp, transparent, repeat, mirror
   const [textureMapping, setTextureMapping] = useState('projected'); // fitted, unfolded, projected, per-key
+  const [showShadows, setShowShadows] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -173,6 +174,14 @@ export default function App() {
               Keyboard Case
             </label>
             <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm text-slate-600">Shadows</span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" className="sr-only peer" checked={showShadows} onChange={(e) => setShowShadows(e.target.checked)} />
+                  <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                </label>
+              </div>
+
               <div className="flex items-center justify-between">
                 <span className="text-sm text-slate-600">Base Color</span>
                 <input 
@@ -498,6 +507,7 @@ export default function App() {
           caseTopCornerRadius={caseTopCornerRadius}
           caseBottomCornerRadius={caseBottomCornerRadius}
           keycapHeightAboveCase={keycapHeightAboveCase}
+          showShadows={showShadows}
         />
         
         {/* Overlay instructions */}

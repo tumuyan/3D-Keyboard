@@ -660,7 +660,7 @@ export function KeyboardScene({
   showLabels = true, labelPosition = 'top-left', profile = 'OEM',
   labelColor = '#334155', labelOutlineColor = '#000000', labelOutlineWidth = 0, fontUrl = FONTS['Inter'], keycapColor = '#e2e8f0', baseColor = '#cbd5e1', keyGapX = 0.1, keyGapY = 0.1,
   caseTopEdgeBevel = 0.3, caseBottomEdgeBevel = 0.3, caseSideEdgeBevel = 0.01, caseTopCornerRadius = 0.05, caseBottomCornerRadius = 0.05,
-  keycapHeightAboveCase = 0.02
+  keycapHeightAboveCase = 0.02, showShadows = false
 }: any) {
   const { keys, width, height } = useMemo(() => {
     try {
@@ -789,7 +789,7 @@ export function KeyboardScene({
     <Canvas 
       ref={canvasRef}
       camera={{ position: [0, 8, 5], fov: 45 }}
-      shadows
+      shadows={showShadows}
       gl={{ preserveDrawingBuffer: true }}
     >
       <color attach="background" args={['#f8fafc']} />
@@ -797,7 +797,7 @@ export function KeyboardScene({
       <directionalLight 
         position={[10, 10, 5]} 
         intensity={1.2} 
-        castShadow 
+        castShadow={showShadows}
         shadow-mapSize={[2048, 2048]}
       />
       
@@ -846,7 +846,7 @@ export function KeyboardScene({
           ))}
         </group>
 
-        <ContactShadows position={[0, -0.2, 0]} opacity={0.4} scale={20} blur={2} far={4} />
+        {showShadows && <ContactShadows position={[0, -0.2, 0]} opacity={0.4} scale={20} blur={2} far={4} />}
       </Suspense>
       <OrbitControls makeDefault minPolarAngle={0} maxPolarAngle={Math.PI / 2 - 0.1} />
     </Canvas>
