@@ -745,14 +745,19 @@ export function KeyboardScene({
           c = cRot;
           d = dRot;
         } else {
-          // Non-per-key: use isotropic rotation + imageAspect/kbAspect correction
+          // Non-per-key: isotropic rotation in physical space expressed in UV coordinates
           // textureAspect = 1 → no distortion, texture may extend beyond keyboard
           const kbAspect = width / height;
           const imgAsp = imageAspect || 1;
           const baseUScale = kbAspect / imgAsp;
+          // Physical-space rotation in UV coords requires aspect correction:
+          //   a uses baseUScale (horizontal scale for image fitting)
+          //   b divides by imgAsp (not baseUScale) so rotation stays isotropic
+          //   c multiplies by kbAspect (vertical-to-horizontal conversion)
+          //   d = cos (vertical scale = 1)
           a = textureAspect * baseUScale * s * cos;
-          b = textureAspect * baseUScale * (-s * sin);
-          c = s * sin;
+          b = -textureAspect * s * sin / imgAsp;
+          c = kbAspect * s * sin;
           d = s * cos;
         }
         

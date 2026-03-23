@@ -157,26 +157,32 @@ v = 0.5 - localV / scaleV;
 
 ```
 a = textureAspect × (kbAspect / imgAsp) × s × cos(θ)
-b = textureAspect × (kbAspect / imgAsp) × (-s × sin(θ))
-c = s × sin(θ)
+b = -textureAspect × s × sin(θ) / imgAsp
+c = kbAspect × s × sin(θ)
 d = s × cos(θ)
 tx = 0.5 - offsetX - 0.5 × (a + b)
 ty = 0.5 + offsetY - 0.5 × (c + d)
 ```
 
-其中 `s = 1 / textureScale`。
+其中 `s = 1 / textureScale`，`baseUScale = kbAspect / imgAsp`。
 
-**核心设计**: `textureAspect = 1` 时图片以原始比例呈现（无压缩/拉伸），使用各向同性旋转 + `kbAspect / imgAsp` 基准校正。
+**核心设计**: `textureAspect = 1` 时图片以原始比例呈现（无压缩/拉伸），旋转在物理空间中保持各向同性。
 
-**数学推导** — 无变形条件:
+**数学推导** — 旋转无变形条件:
 
-图片中的圆在纹理空间中占 `Δu' = D/imgW`，`Δv' = D/imgH`。映射到物理空间：
-- 物理宽度 = `(Δu' / a) × keyboard_width`
-- 物理高度 = `(Δv' / d) × keyboard_height`
+UV 空间 [0,1]×[0,1] 映射到物理空间 [0, kbW]×[0, kbH]，因此 1 单位 U = kbW 物理单位，1 单位 V = kbH 物理单位。物理空间中各向同性旋转矩阵（转换为 UV 坐标后）：
 
-圆 → 圆 条件: `keyboard_width / a = imgAsp × keyboard_height / d`
+```
+R_uv = | cos        -sin/kbAspect |
+       | kbAspect×sin    cos       |
+```
 
-当 `a/d = kbAspect / imgAsp` 时满足，即 `baseUScale = kbAspect / imgAsp`。
+在此基础上叠加图片宽高比校正和 textureAspect：
+- `a` 使用 `baseUScale` 做水平缩放（使图片以原始比例适配键盘宽度）
+- `b` 除以 `imgAsp`（而非 `baseUScale`），保证旋转轴的缩放一致
+- `c` 乘以 `kbAspect`，将物理空间的垂直分量正确转换回 UV 坐标
+
+当 `θ = 0` 时矩阵退化为 `a = textureAspect × baseUScale × s, b = 0, c = 0, d = s`，与无旋转时行为一致。
 
 #### Per-Key 模式
 
