@@ -722,37 +722,39 @@ export function KeyboardScene({
         // (coverScale no longer used – textureAspect replaces it)
         
         // Build transformation matrix
-        // Rotation is corrected for UV space non-isotropy so it appears
-        // distortion-free when viewed from above.  textureAspect then
-        // applies an intentional stretch in the screen-U direction.
-        // Order: M = Stretch(textureAspect) × CorrectedRotation
+        // At textureAspect = 1, the image appears at its natural proportions
+        // (no compression/stretching). textureAspect then applies additional
+        // horizontal stretch. The image may extend beyond the keyboard.
         
         const s = 1 / textureScale;
         const radians = textureRotation * Math.PI / 180;
         const cos = Math.cos(radians);
         const sin = Math.sin(radians);
         
-        // Corrected rotation coefficients (distortion-free in world space)
-        let aRot, bRot, cRot, dRot;
+        let a, b, c, d;
         if (textureMapping === 'per-key') {
+          // Per-key: UV already handles image aspect ratio via imageAspect
+          // Corrected rotation uses imageAspect (per-key UV space is imageAspect-aware)
           const imgAsp = imageAspect || 1;
-          aRot = s * cos;
-          bRot = -s * sin / imgAsp;
-          cRot = s * sin * imgAsp;
-          dRot = s * cos;
+          const aRot = s * cos;
+          const bRot = -s * sin / imgAsp;
+          const cRot = s * sin * imgAsp;
+          const dRot = s * cos;
+          a = textureAspect * aRot;
+          b = textureAspect * bRot;
+          c = cRot;
+          d = dRot;
         } else {
+          // Non-per-key: use isotropic rotation + imageAspect/kbAspect correction
+          // textureAspect = 1 → no distortion, texture may extend beyond keyboard
           const kbAspect = width / height;
-          aRot = s * cos;
-          bRot = -s * sin / kbAspect;
-          cRot = s * sin * kbAspect;
-          dRot = s * cos;
+          const imgAsp = imageAspect || 1;
+          const baseUScale = kbAspect / imgAsp;
+          a = textureAspect * baseUScale * s * cos;
+          b = textureAspect * baseUScale * (-s * sin);
+          c = s * sin;
+          d = s * cos;
         }
-        
-        // Apply textureAspect stretch on the U output axis (screen-aligned)
-        const a = textureAspect * aRot;
-        const b = textureAspect * bRot;
-        const c = cRot;
-        const d = dRot;
         
         // Rotate around center (0.5, 0.5), then apply offset
         const tx = 0.5 - textureOffsetX - 0.5 * (a + b);
@@ -776,7 +778,7 @@ export function KeyboardScene({
       
       texture.needsUpdate = true;
     }
-  }, [texture, width, height, textureScale, textureOffsetX, textureOffsetY, textureAspect, textureRotation, outOfBoundsMode, textureMapping]);
+  }, [texture, width, height, textureScale, textureOffsetX, textureOffsetY, textureAspect, textureRotation, outOfBoundsMode, textureMapping, imageAspect]);
 
   return (
     <Canvas 
