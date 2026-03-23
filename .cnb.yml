@@ -4,8 +4,8 @@
 $:
   vscode:
     - docker:
-        # 使用 Node.js 24 镜像作为开发环境
-        image: node:24
+        # 使用 Node.js 22 LTS 镜像作为开发环境
+        image: node:22
         services:
           - vscode
           - docker
@@ -19,11 +19,11 @@ $:
           - name: 启动开发服务器
             script: npm run dev
 
-# 主分支推送触发
+# 主分支触发
 main:
   push:
     - docker:
-        image: node:24
+        image: node:22
         # 挂载 npm 缓存以加速构建
         volumes:
           - /root/.npm:cow
@@ -40,16 +40,15 @@ main:
             settings:
               git_doc_dir: /${CNB_BUILD_WORKSPACE}/${CNB_REPO_SLUG}/codewiki
 
-# Pull Request 触发
-pull_request:
-  - docker:
-      image: node:24
-      volumes:
-        - /root/.npm:cow
-      stages:
-        - name: 安装依赖
-          script: npm install
-        - name: 类型检查
-          script: npm run lint
-        - name: 构建项目
-          script: npm run build
+  pull_request:
+    - docker:
+        image: node:22
+        volumes:
+          - /root/.npm:cow
+        stages:
+          - name: 安装依赖
+            script: npm install
+          - name: 类型检查
+            script: npm run lint
+          - name: 构建项目
+            script: npm run build
