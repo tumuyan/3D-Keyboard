@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { KeyboardScene, PROFILES, FONTS } from './components/Keyboard3D';
-import { Upload, Download, Code, Settings2, Type, ImageIcon, SlidersHorizontal, Box, ChevronDown, X } from 'lucide-react';
+import { Upload, Download, Code, Settings2, Type, ImageIcon, SlidersHorizontal, Box, ChevronDown, X, Globe } from 'lucide-react';
+import { useI18n } from './i18n';
 
 const DEFAULT_KLE = `[
   [{"a":7},"Q","W","E","R","T","Y","U","I","O","P"],
@@ -47,6 +48,7 @@ export default function App() {
   const [showShadows, setShowShadows] = useState(false);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { t, locale, setLocale } = useI18n();
 
   // Responsive detection
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -182,13 +184,13 @@ export default function App() {
             className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-4 py-2.5 bg-indigo-600 text-white text-xs font-semibold rounded-full shadow-lg active:scale-95 transition-transform"
           >
             <SlidersHorizontal className="w-4 h-4" />
-            Parameters
+            {t('app.parameters')}
           </button>
         )}
 
         {/* Instructions - top left */}
         <div className="absolute top-3 left-3 bg-white/80 backdrop-blur-md px-2.5 py-1.5 rounded-lg shadow-sm border border-slate-200/50 text-[10px] text-slate-500 pointer-events-none">
-          Touch to rotate • Pinch to zoom
+          {t('instructions.mobile')}
         </div>
       </div>
 
@@ -213,11 +215,11 @@ export default function App() {
           <div className="flex items-center justify-between pt-1 pb-2 border-b border-slate-100">
             <h1 className="text-base font-bold tracking-tight text-slate-900 flex items-center gap-1.5">
               <Code className="w-4 h-4 text-indigo-600" />
-              Keycap 3D
+              {t('app.title')}
             </h1>
             <div className="flex items-center gap-2">
               <button onClick={handleExport} className="text-[10px] text-indigo-600 font-semibold px-2 py-1 bg-indigo-50 rounded-lg active:bg-indigo-100">
-                Export {exportFormat.toUpperCase()}
+                {t('export.format', { format: exportFormat.toUpperCase() })}
               </button>
               <button
                 onClick={() => setMobilePanelOpen(false)}
@@ -232,7 +234,7 @@ export default function App() {
           <details className="group">
             <summary className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer list-none py-1">
               <Code className="w-3.5 h-3.5" />
-              KLE JSON
+              {t('kle.title')}
               <ChevronDown className="w-3.5 h-3.5 ml-auto transition-transform group-open:rotate-180" />
             </summary>
             <textarea
@@ -247,25 +249,25 @@ export default function App() {
           <details className="group" open>
             <summary className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer list-none py-1 border-b border-slate-100">
               <Settings2 className="w-3.5 h-3.5" />
-              Keycap Settings
+              {t('keycap.title')}
               <ChevronDown className="w-3.5 h-3.5 ml-auto transition-transform group-open:rotate-180" />
             </summary>
             <div className="space-y-2 mt-2">
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-slate-600">Profile</span>
+                <span className="text-[11px] text-slate-600">{t('keycap.profile')}</span>
                 <select value={profile} onChange={(e) => setProfile(e.target.value)} className="bg-slate-50 border border-slate-200 text-[11px] rounded-lg px-2 py-1 focus:ring-2 focus:ring-indigo-500 outline-none">
                   {Object.keys(PROFILES).map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
 
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-slate-600">Color</span>
+                <span className="text-[11px] text-slate-600">{t('keycap.color')}</span>
                 <input type="color" value={keycapColor} onChange={(e) => setKeycapColor(e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0 p-0" />
               </div>
 
-              <SliderControl label="Gap X" value={keyGapX} min={0} max={0.3} step={0.01} onChange={setKeyGapX} />
-              <SliderControl label="Gap Y" value={keyGapY} min={0} max={0.3} step={0.01} onChange={setKeyGapY} />
-              <SliderControl label="Height Above Case" value={keycapHeightAboveCase} min={0} max={0.5} step={0.01} onChange={setKeycapHeightAboveCase} />
+              <SliderControl label={t('keycap.gapX')} value={keyGapX} min={0} max={0.3} step={0.01} onChange={setKeyGapX} />
+              <SliderControl label={t('keycap.gapY')} value={keyGapY} min={0} max={0.3} step={0.01} onChange={setKeyGapY} />
+              <SliderControl label={t('keycap.height')} value={keycapHeightAboveCase} min={0} max={0.5} step={0.01} onChange={setKeycapHeightAboveCase} />
             </div>
           </details>
 
@@ -273,20 +275,20 @@ export default function App() {
           <details className="group">
             <summary className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer list-none py-1 border-b border-slate-100">
               <Box className="w-3.5 h-3.5" />
-              Keyboard Case
+              {t('case.title')}
               <ChevronDown className="w-3.5 h-3.5 ml-auto transition-transform group-open:rotate-180" />
             </summary>
             <div className="space-y-2 mt-2">
-              <ToggleControl label="Shadows" checked={showShadows} onChange={setShowShadows} />
+              <ToggleControl label={t('case.shadows')} checked={showShadows} onChange={setShowShadows} />
               <div className="flex items-center justify-between">
-                <span className="text-[11px] text-slate-600">Base Color</span>
+                <span className="text-[11px] text-slate-600">{t('case.baseColor')}</span>
                 <input type="color" value={baseColor} onChange={(e) => setBaseColor(e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0 p-0" />
               </div>
-              <SliderControl label="Top Bevel" value={caseTopEdgeBevel} min={0} max={0.4} step={0.01} onChange={setCaseTopEdgeBevel} />
-              <SliderControl label="Bottom Bevel" value={caseBottomEdgeBevel} min={0} max={0.4} step={0.01} onChange={setCaseBottomEdgeBevel} />
-              <SliderControl label="Side Bevel" value={caseSideEdgeBevel} min={0} max={0.4} step={0.01} onChange={setCaseSideEdgeBevel} />
-              <SliderControl label="Top Corner" value={caseTopCornerRadius} min={0} max={0.5} step={0.01} onChange={setCaseTopCornerRadius} />
-              <SliderControl label="Bottom Corner" value={caseBottomCornerRadius} min={0} max={0.5} step={0.01} onChange={setCaseBottomCornerRadius} />
+              <SliderControl label={t('case.topBevel')} value={caseTopEdgeBevel} min={0} max={0.4} step={0.01} onChange={setCaseTopEdgeBevel} />
+              <SliderControl label={t('case.bottomBevel')} value={caseBottomEdgeBevel} min={0} max={0.4} step={0.01} onChange={setCaseBottomEdgeBevel} />
+              <SliderControl label={t('case.sideBevel')} value={caseSideEdgeBevel} min={0} max={0.4} step={0.01} onChange={setCaseSideEdgeBevel} />
+              <SliderControl label={t('case.topCorner')} value={caseTopCornerRadius} min={0} max={0.5} step={0.01} onChange={setCaseTopCornerRadius} />
+              <SliderControl label={t('case.bottomCorner')} value={caseBottomCornerRadius} min={0} max={0.5} step={0.01} onChange={setCaseBottomCornerRadius} />
             </div>
           </details>
 
@@ -294,45 +296,45 @@ export default function App() {
           <details className="group">
             <summary className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer list-none py-1 border-b border-slate-100">
               <Type className="w-3.5 h-3.5" />
-              Label Settings
+              {t('label.title')}
               <ChevronDown className="w-3.5 h-3.5 ml-auto transition-transform group-open:rotate-180" />
             </summary>
             <div className="space-y-2 mt-2">
-              <ToggleControl label="Show Labels" checked={showLabels} onChange={setShowLabels} />
+              <ToggleControl label={t('label.show')} checked={showLabels} onChange={setShowLabels} />
               {showLabels && (
                 <>
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-slate-600">Position</span>
+                    <span className="text-[11px] text-slate-600">{t('label.position')}</span>
                     <select value={labelPosition} onChange={(e) => setLabelPosition(e.target.value)} className="bg-slate-50 border border-slate-200 text-[11px] rounded-lg px-2 py-1 focus:ring-2 focus:ring-indigo-500 outline-none">
-                      <option value="top-left">Top Left</option>
-                      <option value="top-center">Top Center</option>
-                      <option value="top-right">Top Right</option>
-                      <option value="mid-left">Mid Left</option>
-                      <option value="mid-center">Mid Center</option>
-                      <option value="mid-right">Mid Right</option>
-                      <option value="bot-left">Bot Left</option>
-                      <option value="bot-center">Bot Center</option>
-                      <option value="bot-right">Bot Right</option>
-                      <option value="front-left">Front Left</option>
-                      <option value="front-center">Front Center</option>
-                      <option value="front-right">Front Right</option>
+                      <option value="top-left">{t('label.pos.topLeft')}</option>
+                      <option value="top-center">{t('label.pos.topCenter')}</option>
+                      <option value="top-right">{t('label.pos.topRight')}</option>
+                      <option value="mid-left">{t('label.pos.midLeft')}</option>
+                      <option value="mid-center">{t('label.pos.midCenter')}</option>
+                      <option value="mid-right">{t('label.pos.midRight')}</option>
+                      <option value="bot-left">{t('label.pos.botLeft')}</option>
+                      <option value="bot-center">{t('label.pos.botCenter')}</option>
+                      <option value="bot-right">{t('label.pos.botRight')}</option>
+                      <option value="front-left">{t('label.pos.frontLeft')}</option>
+                      <option value="front-center">{t('label.pos.frontCenter')}</option>
+                      <option value="front-right">{t('label.pos.frontRight')}</option>
                     </select>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-slate-600">Font</span>
+                    <span className="text-[11px] text-slate-600">{t('label.font')}</span>
                     <select value={fontName} onChange={(e) => setFontName(e.target.value)} className="bg-slate-50 border border-slate-200 text-[11px] rounded-lg px-2 py-1 focus:ring-2 focus:ring-indigo-500 outline-none">
                       {Object.keys(FONTS).map(f => <option key={f} value={f}>{f}</option>)}
                     </select>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-slate-600">Fill</span>
+                    <span className="text-[11px] text-slate-600">{t('label.fillColor')}</span>
                     <input type="color" value={labelColor} onChange={(e) => setLabelColor(e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0 p-0" />
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] text-slate-600">Stroke</span>
+                    <span className="text-[11px] text-slate-600">{t('label.strokeColor')}</span>
                     <input type="color" value={labelOutlineColor} onChange={(e) => setLabelOutlineColor(e.target.value)} className="w-7 h-7 rounded cursor-pointer border-0 p-0" />
                   </div>
-                  <SliderControl label="Stroke Width" value={labelOutlineWidth} min={0} max={0.05} step={0.001} onChange={setLabelOutlineWidth} decimals={3} />
+                  <SliderControl label={t('label.strokeWidth')} value={labelOutlineWidth} min={0} max={0.05} step={0.001} onChange={setLabelOutlineWidth} decimals={3} />
                 </>
               )}
             </div>
@@ -342,14 +344,14 @@ export default function App() {
           <details className="group" open>
             <summary className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer list-none py-1 border-b border-slate-100">
               <ImageIcon className="w-3.5 h-3.5" />
-              Global Texture
+              {t('texture.title')}
               <ChevronDown className="w-3.5 h-3.5 ml-auto transition-transform group-open:rotate-180" />
             </summary>
             <div className="space-y-2 mt-2">
               <label className="flex flex-col items-center justify-center w-full h-16 border-2 border-slate-200 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors group">
                 <div className="flex flex-col items-center justify-center">
                   <Upload className="w-5 h-5 mb-0.5 text-slate-400 group-hover:text-indigo-500 transition-colors" />
-                  <p className="text-[10px] text-slate-500"><span className="font-semibold text-indigo-600">Upload Image</span></p>
+                  <p className="text-[10px] text-slate-500"><span className="font-semibold text-indigo-600">{t('texture.upload')}</span></p>
                 </div>
                 <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
               </label>
@@ -358,36 +360,36 @@ export default function App() {
                 <div className="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                      <SlidersHorizontal className="w-3 h-3" /> Adjustments
+                      <SlidersHorizontal className="w-3 h-3" /> {t('texture.adjustments')}
                     </span>
-                    <button onClick={() => setTextureUrl(null)} className="text-[10px] text-red-500 hover:text-red-700 font-medium">Remove</button>
+                    <button onClick={() => setTextureUrl(null)} className="text-[10px] text-red-500 hover:text-red-700 font-medium">{t('texture.remove')}</button>
                   </div>
 
-                  <SliderControl label="Scale" value={textureScale} min={0.1} max={3} step={0.01} onChange={setTextureScale} suffix="x" />
-                  <SliderControl label="Offset X" value={textureOffsetX} min={-1} max={1} step={0.01} onChange={setTextureOffsetX} />
-                  <SliderControl label="Offset Y" value={textureOffsetY} min={-1} max={1} step={0.01} onChange={setTextureOffsetY} />
-                  <SliderControl label="Aspect Ratio" value={textureAspect} min={0.5} max={2} step={0.01} onChange={setTextureAspect} />
-                  <SliderControl label="Rotation" value={textureRotation} min={0} max={360} step={1} onChange={setTextureRotation} suffix="°" decimals={0} />
-                  <SliderControl label="Keycap Opacity" value={textureOpacity} min={0} max={1} step={0.01} onChange={setTextureOpacity} suffix="%" displayPercent />
-                  <SliderControl label="Base Opacity" value={baseOpacity} min={0} max={1} step={0.01} onChange={setBaseOpacity} suffix="%" displayPercent />
+                  <SliderControl label={t('texture.scale')} value={textureScale} min={0.1} max={3} step={0.01} onChange={setTextureScale} suffix="x" />
+                  <SliderControl label={t('texture.offsetX')} value={textureOffsetX} min={-1} max={1} step={0.01} onChange={setTextureOffsetX} />
+                  <SliderControl label={t('texture.offsetY')} value={textureOffsetY} min={-1} max={1} step={0.01} onChange={setTextureOffsetY} />
+                  <SliderControl label={t('texture.aspectRatio')} value={textureAspect} min={0.5} max={2} step={0.01} onChange={setTextureAspect} />
+                  <SliderControl label={t('texture.rotation')} value={textureRotation} min={0} max={360} step={1} onChange={setTextureRotation} suffix="°" decimals={0} />
+                  <SliderControl label={t('texture.keycapOpacity')} value={textureOpacity} min={0} max={1} step={0.01} onChange={setTextureOpacity} suffix="%" displayPercent />
+                  <SliderControl label={t('texture.baseOpacity')} value={baseOpacity} min={0} max={1} step={0.01} onChange={setBaseOpacity} suffix="%" displayPercent />
 
                   <div className="pt-2 border-t border-slate-200 space-y-2">
                     <div>
-                      <span className="text-[10px] text-slate-600">Out of Bounds</span>
+                      <span className="text-[10px] text-slate-600">{t('texture.outOfBounds')}</span>
                       <select value={outOfBoundsMode} onChange={(e) => setOutOfBoundsMode(e.target.value)} className="w-full text-[11px] p-1 mt-1 border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                        <option value="clamp">Clamp to Edge</option>
-                        <option value="transparent">Transparent</option>
-                        <option value="repeat">Repeat</option>
-                        <option value="mirror">Mirror Repeat</option>
+                        <option value="clamp">{t('oob.clamp')}</option>
+                        <option value="transparent">{t('oob.transparent')}</option>
+                        <option value="repeat">{t('oob.repeat')}</option>
+                        <option value="mirror">{t('oob.mirror')}</option>
                       </select>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-600">Mapping</span>
+                      <span className="text-[10px] text-slate-600">{t('texture.mapping')}</span>
                       <select value={textureMapping} onChange={(e) => setTextureMapping(e.target.value)} className="w-full text-[11px] p-1 mt-1 border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                        <option value="fitted">Fitted (No Overlap)</option>
-                        <option value="unfolded">Unfolded (Overlap)</option>
-                        <option value="projected">Planar (Smear)</option>
-                        <option value="per-key">Per-Keycap</option>
+                        <option value="fitted">{t('mapping.fitted')}</option>
+                        <option value="unfolded">{t('mapping.unfolded')}</option>
+                        <option value="projected">{t('mapping.projected')}</option>
+                        <option value="per-key">{t('mapping.perKey')}</option>
                       </select>
                     </div>
                   </div>
@@ -411,17 +413,26 @@ export default function App() {
           <div>
             <h1 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900 flex items-center gap-2">
               <Code className="w-5 h-5 md:w-6 md:h-6 text-indigo-600" />
-              Keycap 3D
+              {t('app.title')}
             </h1>
-            <p className="text-xs md:text-sm text-slate-500 mt-1">Visualize custom keyboard layouts with global textures.</p>
+            <p className="text-xs md:text-sm text-slate-500 mt-1">{t('app.subtitle')}</p>
           </div>
           {isSidebarOpen && (
-            <button
-              onClick={() => setIsSidebarOpen(false)}
-              className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5 text-slate-400" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setLocale(locale === 'en' ? 'zh' : 'en')}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                title={locale === 'en' ? '中文' : 'English'}
+              >
+                <Globe className="w-5 h-5 text-slate-400" />
+              </button>
+              <button
+                onClick={() => setIsSidebarOpen(false)}
+                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-slate-400" />
+              </button>
+            </div>
           )}
         </div>
 
@@ -430,7 +441,7 @@ export default function App() {
           <div className="space-y-2 md:space-y-3">
             <label className="flex items-center gap-2 text-xs md:text-sm font-semibold text-slate-700">
               <Code className="w-4 h-4" />
-              KLE JSON
+              {t('kle.title')}
             </label>
             <textarea
               value={kleData}
@@ -444,22 +455,22 @@ export default function App() {
           <div className="space-y-3 md:space-y-4">
             <label className="flex items-center gap-2 text-xs md:text-sm font-semibold text-slate-700 border-b border-slate-100 pb-2">
               <Settings2 className="w-4 h-4" />
-              Keycap Settings
+              {t('keycap.title')}
             </label>
             <div className="space-y-2 md:space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs md:text-sm text-slate-600">Profile</span>
+                <span className="text-xs md:text-sm text-slate-600">{t('keycap.profile')}</span>
                 <select value={profile} onChange={(e) => setProfile(e.target.value)} className="bg-slate-50 border border-slate-200 text-xs md:text-sm rounded-lg px-2 md:px-3 py-1.5 focus:ring-2 focus:ring-indigo-500 outline-none">
                   {Object.keys(PROFILES).map(p => <option key={p} value={p}>{p}</option>)}
                 </select>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs md:text-sm text-slate-600">Keycap Color</span>
+                <span className="text-xs md:text-sm text-slate-600">{t('keycap.color')}</span>
                 <input type="color" value={keycapColor} onChange={(e) => setKeycapColor(e.target.value)} className="w-6 h-6 md:w-8 md:h-8 rounded cursor-pointer border-0 p-0" />
               </div>
-              <DesktopSlider label="Key Gap X" value={keyGapX} min={0} max={0.3} step={0.01} onChange={setKeyGapX} />
-              <DesktopSlider label="Key Gap Y" value={keyGapY} min={0} max={0.3} step={0.01} onChange={setKeyGapY} />
-              <DesktopSlider label="Height Above Case" value={keycapHeightAboveCase} min={0} max={0.5} step={0.01} onChange={setKeycapHeightAboveCase} />
+              <DesktopSlider label={t('keycap.gapX')} value={keyGapX} min={0} max={0.3} step={0.01} onChange={setKeyGapX} />
+              <DesktopSlider label={t('keycap.gapY')} value={keyGapY} min={0} max={0.3} step={0.01} onChange={setKeyGapY} />
+              <DesktopSlider label={t('keycap.height')} value={keycapHeightAboveCase} min={0} max={0.5} step={0.01} onChange={setKeycapHeightAboveCase} />
             </div>
           </div>
 
@@ -467,25 +478,25 @@ export default function App() {
           <div className="space-y-3 md:space-y-4">
             <label className="flex items-center gap-2 text-xs md:text-sm font-semibold text-slate-700 border-b border-slate-100 pb-2">
               <Box className="w-4 h-4" />
-              Keyboard Case
+              {t('case.title')}
             </label>
             <div className="space-y-2 md:space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs md:text-sm text-slate-600">Shadows</span>
+                <span className="text-xs md:text-sm text-slate-600">{t('case.shadows')}</span>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" className="sr-only peer" checked={showShadows} onChange={(e) => setShowShadows(e.target.checked)} />
                   <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
                 </label>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-xs md:text-sm text-slate-600">Base Color</span>
+                <span className="text-xs md:text-sm text-slate-600">{t('case.baseColor')}</span>
                 <input type="color" value={baseColor} onChange={(e) => setBaseColor(e.target.value)} className="w-6 h-6 md:w-8 md:h-8 rounded cursor-pointer border-0 p-0" />
               </div>
-              <DesktopSlider label="Top Edge Bevel" value={caseTopEdgeBevel} min={0} max={0.4} step={0.01} onChange={setCaseTopEdgeBevel} />
-              <DesktopSlider label="Bottom Edge Bevel" value={caseBottomEdgeBevel} min={0} max={0.4} step={0.01} onChange={setCaseBottomEdgeBevel} />
-              <DesktopSlider label="Side Edge Bevel" value={caseSideEdgeBevel} min={0} max={0.4} step={0.01} onChange={setCaseSideEdgeBevel} />
-              <DesktopSlider label="Top Corner Radius" value={caseTopCornerRadius} min={0} max={0.5} step={0.01} onChange={setCaseTopCornerRadius} />
-              <DesktopSlider label="Bottom Corner Radius" value={caseBottomCornerRadius} min={0} max={0.5} step={0.01} onChange={setCaseBottomCornerRadius} />
+              <DesktopSlider label={t('case.topBevel')} value={caseTopEdgeBevel} min={0} max={0.4} step={0.01} onChange={setCaseTopEdgeBevel} />
+              <DesktopSlider label={t('case.bottomBevel')} value={caseBottomEdgeBevel} min={0} max={0.4} step={0.01} onChange={setCaseBottomEdgeBevel} />
+              <DesktopSlider label={t('case.sideBevel')} value={caseSideEdgeBevel} min={0} max={0.4} step={0.01} onChange={setCaseSideEdgeBevel} />
+              <DesktopSlider label={t('case.topCorner')} value={caseTopCornerRadius} min={0} max={0.5} step={0.01} onChange={setCaseTopCornerRadius} />
+              <DesktopSlider label={t('case.bottomCorner')} value={caseBottomCornerRadius} min={0} max={0.5} step={0.01} onChange={setCaseBottomCornerRadius} />
             </div>
           </div>
 
@@ -493,11 +504,11 @@ export default function App() {
           <div className="space-y-3 md:space-y-4">
             <label className="flex items-center gap-2 text-xs md:text-sm font-semibold text-slate-700 border-b border-slate-100 pb-2">
               <Type className="w-4 h-4" />
-              Label Settings
+              {t('label.title')}
             </label>
             <div className="space-y-2 md:space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs md:text-sm text-slate-600">Show Labels</span>
+                <span className="text-xs md:text-sm text-slate-600">{t('label.show')}</span>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input type="checkbox" className="sr-only peer" checked={showLabels} onChange={(e) => setShowLabels(e.target.checked)} />
                   <div className="w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-indigo-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
@@ -506,39 +517,39 @@ export default function App() {
               {showLabels && (
                 <>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs md:text-sm text-slate-600">Position</span>
+                    <span className="text-xs md:text-sm text-slate-600">{t('label.position')}</span>
                     <select value={labelPosition} onChange={(e) => setLabelPosition(e.target.value)} className="bg-slate-50 border border-slate-200 text-xs md:text-sm rounded-lg px-2 md:px-3 py-1.5 focus:ring-2 focus:ring-indigo-500 outline-none">
-                      <option value="top-left">Top Left</option>
-                      <option value="top-center">Top Center</option>
-                      <option value="top-right">Top Right</option>
-                      <option value="mid-left">Mid Left</option>
-                      <option value="mid-center">Mid Center</option>
-                      <option value="mid-right">Mid Right</option>
-                      <option value="bot-left">Bot Left</option>
-                      <option value="bot-center">Bot Center</option>
-                      <option value="bot-right">Bot Right</option>
-                      <option value="front-left">Front Left</option>
-                      <option value="front-center">Front Center</option>
-                      <option value="front-right">Front Right</option>
+                      <option value="top-left">{t('label.pos.topLeft')}</option>
+                      <option value="top-center">{t('label.pos.topCenter')}</option>
+                      <option value="top-right">{t('label.pos.topRight')}</option>
+                      <option value="mid-left">{t('label.pos.midLeft')}</option>
+                      <option value="mid-center">{t('label.pos.midCenter')}</option>
+                      <option value="mid-right">{t('label.pos.midRight')}</option>
+                      <option value="bot-left">{t('label.pos.botLeft')}</option>
+                      <option value="bot-center">{t('label.pos.botCenter')}</option>
+                      <option value="bot-right">{t('label.pos.botRight')}</option>
+                      <option value="front-left">{t('label.pos.frontLeft')}</option>
+                      <option value="front-center">{t('label.pos.frontCenter')}</option>
+                      <option value="front-right">{t('label.pos.frontRight')}</option>
                     </select>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs md:text-sm text-slate-600">Font</span>
+                    <span className="text-xs md:text-sm text-slate-600">{t('label.font')}</span>
                     <select value={fontName} onChange={(e) => setFontName(e.target.value)} className="bg-slate-50 border border-slate-200 text-xs md:text-sm rounded-lg px-2 md:px-3 py-1.5 focus:ring-2 focus:ring-indigo-500 outline-none">
                       {Object.keys(FONTS).map(f => <option key={f} value={f}>{f}</option>)}
                     </select>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs md:text-sm text-slate-600">Fill Color</span>
+                    <span className="text-xs md:text-sm text-slate-600">{t('label.fillColor')}</span>
                     <input type="color" value={labelColor} onChange={(e) => setLabelColor(e.target.value)} className="w-6 h-6 md:w-8 md:h-8 rounded cursor-pointer border-0 p-0" />
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-xs md:text-sm text-slate-600">Stroke Color</span>
+                    <span className="text-xs md:text-sm text-slate-600">{t('label.strokeColor')}</span>
                     <input type="color" value={labelOutlineColor} onChange={(e) => setLabelOutlineColor(e.target.value)} className="w-6 h-6 md:w-8 md:h-8 rounded cursor-pointer border-0 p-0" />
                   </div>
                   <div className="space-y-1">
                     <div className="flex justify-between text-[10px] md:text-xs text-slate-600">
-                      <span>Stroke Width</span>
+                      <span>{t('label.strokeWidth')}</span>
                       <span>{labelOutlineWidth.toFixed(3)}</span>
                     </div>
                     <input type="range" min="0" max="0.05" step="0.001" value={labelOutlineWidth} onChange={(e) => setLabelOutlineWidth(parseFloat(e.target.value))} className="w-full h-2 accent-indigo-600" />
@@ -552,13 +563,13 @@ export default function App() {
           <div className="space-y-3 md:space-y-4">
             <label className="flex items-center gap-2 text-xs md:text-sm font-semibold text-slate-700 border-b border-slate-100 pb-2">
               <ImageIcon className="w-4 h-4" />
-              Global Texture
+              {t('texture.title')}
             </label>
             <label className="flex flex-col items-center justify-center w-full h-20 md:h-24 border-2 border-slate-200 border-dashed rounded-xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors group">
               <div className="flex flex-col items-center justify-center pt-4 md:pt-5 pb-4 md:pb-6">
                 <Upload className="w-5 h-5 md:w-6 md:h-6 mb-1 text-slate-400 group-hover:text-indigo-500 transition-colors" />
                 <p className="text-[10px] md:text-xs text-slate-500">
-                  <span className="font-semibold text-indigo-600">Upload Image</span>
+                  <span className="font-semibold text-indigo-600">{t('texture.upload')}</span>
                 </p>
               </div>
               <input type="file" className="hidden" accept="image/*" onChange={handleImageUpload} />
@@ -568,54 +579,54 @@ export default function App() {
               <div className="space-y-3 md:space-y-4 bg-slate-50 p-3 md:p-4 rounded-xl border border-slate-100">
                 <div className="flex items-center justify-between mb-1 md:mb-2">
                   <span className="text-[10px] md:text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                    <SlidersHorizontal className="w-3 h-3" /> Adjustments
+                    <SlidersHorizontal className="w-3 h-3" /> {t('texture.adjustments')}
                   </span>
-                  <button onClick={() => setTextureUrl(null)} className="text-[10px] md:text-xs text-red-500 hover:text-red-700 font-medium">Remove</button>
+                  <button onClick={() => setTextureUrl(null)} className="text-[10px] md:text-xs text-red-500 hover:text-red-700 font-medium">{t('texture.remove')}</button>
                 </div>
                 <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] md:text-xs text-slate-600"><span>Scale</span><span>{textureScale.toFixed(2)}x</span></div>
+                  <div className="flex justify-between text-[10px] md:text-xs text-slate-600"><span>{t('texture.scale')}</span><span>{textureScale.toFixed(2)}x</span></div>
                   <input type="range" min="0.1" max="3" step="0.01" value={textureScale} onChange={(e) => setTextureScale(parseFloat(e.target.value))} className="w-full h-2 accent-indigo-600" />
                 </div>
                 <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] md:text-xs text-slate-600"><span>Offset X</span><span>{textureOffsetX.toFixed(2)}</span></div>
+                  <div className="flex justify-between text-[10px] md:text-xs text-slate-600"><span>{t('texture.offsetX')}</span><span>{textureOffsetX.toFixed(2)}</span></div>
                   <input type="range" min="-1" max="1" step="0.01" value={textureOffsetX} onChange={(e) => setTextureOffsetX(parseFloat(e.target.value))} className="w-full h-2 accent-indigo-600" />
                 </div>
                 <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] md:text-xs text-slate-600"><span>Offset Y</span><span>{textureOffsetY.toFixed(2)}</span></div>
+                  <div className="flex justify-between text-[10px] md:text-xs text-slate-600"><span>{t('texture.offsetY')}</span><span>{textureOffsetY.toFixed(2)}</span></div>
                   <input type="range" min="-1" max="1" step="0.01" value={textureOffsetY} onChange={(e) => setTextureOffsetY(parseFloat(e.target.value))} className="w-full h-2 accent-indigo-600" />
                 </div>
                 <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] md:text-xs text-slate-600"><span>Aspect Ratio</span><span>{textureAspect.toFixed(2)}</span></div>
+                  <div className="flex justify-between text-[10px] md:text-xs text-slate-600"><span>{t('texture.aspectRatio')}</span><span>{textureAspect.toFixed(2)}</span></div>
                   <input type="range" min="0.5" max="2" step="0.01" value={textureAspect} onChange={(e) => setTextureAspect(parseFloat(e.target.value))} className="w-full h-2 accent-indigo-600" />
                 </div>
                 <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] md:text-xs text-slate-600"><span>Rotation</span><span>{textureRotation}°</span></div>
+                  <div className="flex justify-between text-[10px] md:text-xs text-slate-600"><span>{t('texture.rotation')}</span><span>{textureRotation}°</span></div>
                   <input type="range" min="0" max="360" step="1" value={textureRotation} onChange={(e) => setTextureRotation(parseFloat(e.target.value))} className="w-full h-2 accent-indigo-600" />
                 </div>
                 <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] md:text-xs text-slate-600"><span>Keycap Opacity</span><span>{Math.round(textureOpacity * 100)}%</span></div>
+                  <div className="flex justify-between text-[10px] md:text-xs text-slate-600"><span>{t('texture.keycapOpacity')}</span><span>{Math.round(textureOpacity * 100)}%</span></div>
                   <input type="range" min="0" max="1" step="0.01" value={textureOpacity} onChange={(e) => setTextureOpacity(parseFloat(e.target.value))} className="w-full h-2 accent-indigo-600" />
                 </div>
                 <div className="space-y-1">
-                  <div className="flex justify-between text-[10px] md:text-xs text-slate-600"><span>Base Plate Opacity</span><span>{Math.round(baseOpacity * 100)}%</span></div>
+                  <div className="flex justify-between text-[10px] md:text-xs text-slate-600"><span>{t('texture.baseOpacity')}</span><span>{Math.round(baseOpacity * 100)}%</span></div>
                   <input type="range" min="0" max="1" step="0.01" value={baseOpacity} onChange={(e) => setBaseOpacity(parseFloat(e.target.value))} className="w-full h-2 accent-indigo-600" />
                 </div>
                 <div className="pt-2 border-t border-slate-200">
-                  <div className="flex items-center justify-between mb-2"><span className="text-xs text-slate-600">Out of Bounds Mode</span></div>
+                  <div className="flex items-center justify-between mb-2"><span className="text-xs text-slate-600">{t('texture.outOfBounds')}</span></div>
                   <select value={outOfBoundsMode} onChange={(e) => setOutOfBoundsMode(e.target.value)} className="w-full text-xs p-1 border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                    <option value="clamp">Clamp to Edge</option>
-                    <option value="transparent">Transparent</option>
-                    <option value="repeat">Repeat</option>
-                    <option value="mirror">Mirror Repeat</option>
+                    <option value="clamp">{t('oob.clamp')}</option>
+                    <option value="transparent">{t('oob.transparent')}</option>
+                    <option value="repeat">{t('oob.repeat')}</option>
+                    <option value="mirror">{t('oob.mirror')}</option>
                   </select>
                 </div>
                 <div className="pt-2 border-t border-slate-200">
-                  <div className="flex items-center justify-between mb-2"><span className="text-xs text-slate-600">Texture Mapping</span></div>
+                  <div className="flex items-center justify-between mb-2"><span className="text-xs text-slate-600">{t('texture.mapping')}</span></div>
                   <select value={textureMapping} onChange={(e) => setTextureMapping(e.target.value)} className="w-full text-xs p-1 border border-slate-300 rounded focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                    <option value="fitted">Fitted (No Overlap)</option>
-                    <option value="unfolded">Unfolded (Overlap)</option>
-                    <option value="projected">Planar (Smear)</option>
-                    <option value="per-key">Per-Keycap</option>
+                    <option value="fitted">{t('mapping.fitted')}</option>
+                    <option value="unfolded">{t('mapping.unfolded')}</option>
+                    <option value="projected">{t('mapping.projected')}</option>
+                    <option value="per-key">{t('mapping.perKey')}</option>
                   </select>
                 </div>
               </div>
@@ -630,7 +641,7 @@ export default function App() {
             className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 md:py-3 px-4 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-[0.98] text-xs md:text-sm"
           >
             <Download className="w-4 h-4 md:w-5 md:h-5" />
-            Export as {exportFormat.toUpperCase()}
+            {t('export.as', { format: exportFormat.toUpperCase() })}
           </button>
         </div>
       </div>
@@ -653,7 +664,7 @@ export default function App() {
               key={fmt}
               onClick={() => { setExportFormat(fmt); handleExport(); }}
               className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors ${exportFormat === fmt ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-50'}`}
-              title={`Export as ${fmt.toUpperCase()}`}
+              title={t('export.as', { format: fmt.toUpperCase() })}
             >
               {fmt === exportFormat && <Download className="w-3.5 h-3.5" />}
               <span>{fmt.toUpperCase()}</span>
@@ -664,7 +675,7 @@ export default function App() {
         <KeyboardScene {...keyboardSceneProps} />
 
         <div className="absolute bottom-4 left-4 md:bottom-6 md:left-6 bg-white/80 backdrop-blur-md px-3 py-1.5 md:px-4 md:py-2 rounded-lg shadow-sm border border-slate-200/50 text-[10px] md:text-sm text-slate-600 pointer-events-none">
-          Left click to rotate • Right click to pan • Scroll to zoom
+          {t('instructions.desktop')}
         </div>
       </div>
     </div>
