@@ -370,7 +370,7 @@ function Keycap({
         color={keycapColor}
         roughness={0.6}
         metalness={0.1}
-        transparent={textureOpacity < 1}
+        transparent={false}
         opacity={textureOpacity > 0 ? textureOpacity : 1}
         customProgramCacheKey={() => outOfBoundsMode}
         onBeforeCompile={(shader) => {
@@ -384,11 +384,11 @@ function Keycap({
               
               ${outOfBoundsMode === 'transparent' ? `
               if (outOfBounds) {
-                texelColor = vec4(0.0);
+                texelColor = vec4(0.0, 0.0, 0.0, 0.0);
               }
               ` : ''}
               
-              diffuseColor.rgb = mix(diffuseColor.rgb, texelColor.rgb, texelColor.a);
+              diffuseColor.rgb = mix(diffuseColor.rgb, texelColor.rgb, texelColor.a * opacity);
             #endif
             `
           );
@@ -625,7 +625,7 @@ function BasePlate({ width, height, texture, baseOpacity, baseColor, keyGapX, ke
         map={(baseOpacity > 0 && texture) ? texture : null} 
         color={baseColor} 
         roughness={0.8} 
-        transparent={baseOpacity < 1}
+        transparent={false}
         opacity={baseOpacity > 0 ? baseOpacity : 1}
         customProgramCacheKey={() => outOfBoundsMode}
         onBeforeCompile={(shader) => {
@@ -639,11 +639,11 @@ function BasePlate({ width, height, texture, baseOpacity, baseColor, keyGapX, ke
               
               ${outOfBoundsMode === 'transparent' ? `
               if (outOfBounds) {
-                texelColor = vec4(0.0);
+                texelColor = vec4(0.0, 0.0, 0.0, 0.0);
               }
               ` : ''}
               
-              diffuseColor.rgb = mix(diffuseColor.rgb, texelColor.rgb, texelColor.a);
+              diffuseColor.rgb = mix(diffuseColor.rgb, texelColor.rgb, texelColor.a * opacity);
             #endif
             `
           );
