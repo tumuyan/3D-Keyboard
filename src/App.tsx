@@ -1,7 +1,10 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { KeyboardScene, PROFILES, FONTS } from './components/Keyboard3D';
+import React, { lazy, Suspense, useState, useRef, useEffect, useCallback } from 'react';
+import type { ComponentType } from 'react';
+import { PROFILES, FONTS } from './components/constants';
 import { Upload, Download, Code, Settings2, Type, ImageIcon, SlidersHorizontal, Box, ChevronDown, X, Globe } from 'lucide-react';
 import { useI18n } from './i18n';
+
+const KeyboardScene = lazy(() => import('./components/Keyboard3D').then(m => ({ default: m.KeyboardScene })));
 
 const DEFAULT_KLE = `[
   [{"a":7},"Q","W","E","R","T","Y","U","I","O","P"],
@@ -162,7 +165,9 @@ export default function App() {
     <div className="flex flex-col h-[100dvh] w-full bg-slate-50 text-slate-900 font-sans overflow-hidden select-none">
       {/* Top: 3D Preview */}
       <div className="flex-1 relative bg-slate-100 touch-none min-h-0">
-        <KeyboardScene {...keyboardSceneProps} />
+        <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-slate-400 text-sm">Loading 3D...</div>}>
+          <KeyboardScene {...keyboardSceneProps} />
+        </Suspense>
 
         {/* Floating export button with format selector */}
         <div className="absolute top-3 right-3 z-10 flex items-center gap-1 bg-white/90 backdrop-blur-md rounded-xl shadow-md border border-slate-200/50 overflow-hidden">
@@ -672,7 +677,9 @@ export default function App() {
           ))}
         </div>
 
-        <KeyboardScene {...keyboardSceneProps} />
+        <Suspense fallback={<div className="absolute inset-0 flex items-center justify-center text-slate-400 text-sm">Loading 3D...</div>}>
+          <KeyboardScene {...keyboardSceneProps} />
+        </Suspense>
 
         <div className="absolute bottom-4 left-4 md:bottom-6 md:left-6 bg-white/80 backdrop-blur-md px-3 py-1.5 md:px-4 md:py-2 rounded-lg shadow-sm border border-slate-200/50 text-[10px] md:text-sm text-slate-600 pointer-events-none">
           {t('instructions.desktop')}
