@@ -6,6 +6,7 @@ $:
     - docker:
         # 使用 Node.js 22 LTS 镜像作为开发环境
         image: node:22
+        keepAliveTimeout: 16h
         services:
           - vscode
           - docker

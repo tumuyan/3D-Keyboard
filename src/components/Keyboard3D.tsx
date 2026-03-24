@@ -785,20 +785,23 @@ export function KeyboardScene({
     }
   }, [texture, width, height, textureScale, textureOffsetX, textureOffsetY, textureAspect, textureRotation, outOfBoundsMode, textureMapping, imageAspect]);
 
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+
   return (
-    <Canvas 
+    <Canvas
       ref={canvasRef}
-      camera={{ position: [0, 8, 5], fov: 45 }}
+      camera={{ position: [0, 8, 5], fov: isMobile ? 50 : 45 }}
       shadows={showShadows}
-      gl={{ preserveDrawingBuffer: true }}
+      gl={{ preserveDrawingBuffer: true, antialias: !isMobile }}
+      dpr={isMobile ? 1 : [1, 2]}
     >
       <color attach="background" args={['#f8fafc']} />
       <ambientLight intensity={0.6} />
-      <directionalLight 
-        position={[10, 10, 5]} 
-        intensity={1.2} 
+      <directionalLight
+        position={[10, 10, 5]}
+        intensity={1.2}
         castShadow={showShadows}
-        shadow-mapSize={[2048, 2048]}
+        shadow-mapSize={isMobile ? [1024, 1024] : [2048, 2048]}
       />
       
       <Suspense fallback={null}>
@@ -848,7 +851,16 @@ export function KeyboardScene({
 
         {showShadows && <ContactShadows position={[0, -0.2, 0]} opacity={0.4} scale={20} blur={2} far={4} />}
       </Suspense>
-      <OrbitControls makeDefault minPolarAngle={0} maxPolarAngle={Math.PI / 2 - 0.1} />
+      <OrbitControls
+        makeDefault
+        minPolarAngle={0}
+        maxPolarAngle={Math.PI / 2 - 0.1}
+        enableDamping
+        dampingFactor={0.05}
+        rotateSpeed={isMobile ? 0.8 : 1}
+        zoomSpeed={isMobile ? 0.8 : 1}
+        touchAction="none"
+      />
     </Canvas>
   );
 }
