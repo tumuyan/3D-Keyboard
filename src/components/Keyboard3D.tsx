@@ -792,8 +792,8 @@ export function KeyboardScene({
       ref={canvasRef}
       camera={{ position: [0, 8, 5], fov: isMobile ? 50 : 45 }}
       shadows={showShadows}
-      gl={{ preserveDrawingBuffer: true, antialias: !isMobile }}
-      dpr={isMobile ? 1 : [1, 2]}
+      gl={{ preserveDrawingBuffer: true, antialias: true }}
+      dpr={[1, 2]}
     >
       <color attach="background" args={['#f8fafc']} />
       <ambientLight intensity={0.6} />

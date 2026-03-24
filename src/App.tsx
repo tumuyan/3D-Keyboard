@@ -108,11 +108,16 @@ export default function App() {
     }
   };
 
+  const [exportFormat, setExportFormat] = useState<'png' | 'jpg' | 'webp'>('png');
+
+  const FORMAT_MIME: Record<string, string> = { png: 'image/png', jpg: 'image/jpeg', webp: 'image/webp' };
+
   const handleExport = () => {
     if (canvasRef.current) {
-      const dataUrl = canvasRef.current.toDataURL('image/png');
+      const mime = FORMAT_MIME[exportFormat] || 'image/png';
+      const dataUrl = canvasRef.current.toDataURL(mime, 0.95);
       const link = document.createElement('a');
-      link.download = 'keyboard-3d.png';
+      link.download = `keyboard-3d.${exportFormat}`;
       link.href = dataUrl;
       link.click();
     }
@@ -157,14 +162,18 @@ export default function App() {
       <div className="flex-1 relative bg-slate-100 touch-none min-h-0">
         <KeyboardScene {...keyboardSceneProps} />
 
-        {/* Floating export button */}
-        <button
-          onClick={handleExport}
-          className="absolute top-3 right-3 z-10 p-2 bg-white/90 backdrop-blur-md rounded-xl shadow-md border border-slate-200/50 active:scale-95 transition-transform"
-          title="Export"
-        >
-          <Download className="w-5 h-5 text-indigo-600" />
-        </button>
+        {/* Floating export button with format selector */}
+        <div className="absolute top-3 right-3 z-10 flex items-center gap-1 bg-white/90 backdrop-blur-md rounded-xl shadow-md border border-slate-200/50 overflow-hidden">
+          {(['png', 'jpg', 'webp'] as const).map(fmt => (
+            <button
+              key={fmt}
+              onClick={() => { setExportFormat(fmt); handleExport(); }}
+              className={`px-2.5 py-1.5 text-[10px] font-semibold uppercase transition-colors ${exportFormat === fmt ? 'bg-indigo-600 text-white' : 'text-slate-600 active:bg-slate-100'}`}
+            >
+              {fmt}
+            </button>
+          ))}
+        </div>
 
         {/* Open panel button when panel is closed */}
         {!mobilePanelOpen && (
@@ -208,7 +217,7 @@ export default function App() {
             </h1>
             <div className="flex items-center gap-2">
               <button onClick={handleExport} className="text-[10px] text-indigo-600 font-semibold px-2 py-1 bg-indigo-50 rounded-lg active:bg-indigo-100">
-                Export PNG
+                Export {exportFormat.toUpperCase()}
               </button>
               <button
                 onClick={() => setMobilePanelOpen(false)}
@@ -621,7 +630,7 @@ export default function App() {
             className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 md:py-3 px-4 rounded-xl transition-all shadow-sm hover:shadow-md active:scale-[0.98] text-xs md:text-sm"
           >
             <Download className="w-4 h-4 md:w-5 md:h-5" />
-            Export 3D Image
+            Export as {exportFormat.toUpperCase()}
           </button>
         </div>
       </div>
@@ -636,6 +645,21 @@ export default function App() {
             <SlidersHorizontal className="w-5 h-5 text-slate-700" />
           </button>
         )}
+
+        {/* Floating export button with format selector */}
+        <div className="absolute top-4 right-4 z-10 flex items-center bg-white rounded-lg shadow-md border border-slate-200/50 overflow-hidden">
+          {(['png', 'jpg', 'webp'] as const).map(fmt => (
+            <button
+              key={fmt}
+              onClick={() => { setExportFormat(fmt); handleExport(); }}
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition-colors ${exportFormat === fmt ? 'bg-indigo-600 text-white' : 'text-slate-700 hover:bg-slate-50'}`}
+              title={`Export as ${fmt.toUpperCase()}`}
+            >
+              {fmt === exportFormat && <Download className="w-3.5 h-3.5" />}
+              <span>{fmt.toUpperCase()}</span>
+            </button>
+          ))}
+        </div>
 
         <KeyboardScene {...keyboardSceneProps} />
 
